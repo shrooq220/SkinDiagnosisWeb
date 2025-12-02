@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='Main.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+  <title data-key="title">DermaLens • Unknown Result</title>
+  <style>
+    /* تنسيقات خاصة للصفحة لضمان أن الرسالة في المنتصف وواضحة */
+    :root {
+      --primary-color: #533A1F;
+      --button-color: #A67C52;
+      --error-light: #fbe6e6;
+      --error-dark: #b04b4b;
+    }
+
+    body {
+      background-color: #f7f7f7;
+      /* يجب تحديد الخط الرئيسي هنا أو في Main.css */
+      /* font-family: var(--main-font); */
+    }
+
+    .message-container {
+      max-width: 600px;
+      margin: 100px auto;
+      padding: 40px;
+      background-color: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      border-left: 5px solid var(--error-dark);
+    }
+
+    .message-container h1 {
+      color: var(--error-dark);
+      margin-bottom: 20px;
+      font-weight: 700;
+    }
+
+    .message-container p {
+      font-size: 1.1rem;
+      color: #555;
+      line-height: 1.6;
+    }
+
+    .btn-new-diagnosis {
+      display: inline-block;
+      margin-top: 30px;
+      text-decoration: none;
+      padding: 12px 25px;
+      background-color: var(--button-color);
+      color: white;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-new-diagnosis:hover {
+      background-color: #8C6A45;
+    }
+    
+    /* تنسيقات إضافية لقائمة اللغة */
+    .header-wrapper {
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        background-color: white;
+    }
+    .navigation {
+        display: flex;
+        justify-content: flex-end; /* لتركيز العناصر في اليمين/اليسار حسب الاتجاه */
+        align-items: center;
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 15px 20px;
+    }
+    .navLinks {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+    }
+    .lang {
+        position: relative;
+    }
+    .dropdown {
+        position: absolute;
+        /* لتحديد موضع القائمة المنسدلة بناءً على اتجاه الصفحة */
+        left: 0; 
+        right: auto;
+        background-color: white;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        border-radius: 5px;
+        z-index: 100;
+        min-width: 100px;
+        display: none;
+        padding: 5px 0;
+        margin-top: 5px;
+    }
+    .lang:hover .dropdown {
+        display: block;
+    }
+    .dropdown a {
+        display: block;
+        padding: 8px 15px;
+        text-decoration: none;
+        color: var(--primary-color);
+        white-space: nowrap;
+        cursor: pointer;
+    }
+    .dropdown a:hover {
+        background-color: #f0f0f0;
+    }
+  </style>
+</head>
+
+<body>
+    <div class="header-wrapper">
+        <header>
+            <nav class="navigation">
+                <ul class="navLinks">
+                    <li class="lang"><a href="#"><i class="fa-solid fa-earth-americas"></i></a>
+                        <div class="dropdown">
+                            <a onclick="switchLang('ar')">عربي</a>
+                            <a onclick="switchLang('en')">English</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+        </header>
+    </div>
+
+  <div class="message-container">
+    <h1 data-key="heading">عذراً، نتيجة غير مؤكدة </h1>
+    <p data-key="paragraph">
+      لقد قمنا بتحليل الصورة، ولكن درجة الثقة في التشخيص كانت أقل من (٤٠٪).
+      لذلك، لا يمكننا تقديم تشخيص موثوق في هذه المرحلة.
+      الرجاء محاولة التقاط صورة أوضح أو زاوية مختلفة.
+    </p>
+    <a href="{{ url_for('analysis') }}" class="btn-new-diagnosis" data-key="button">محاولة تحليل جديدة</a>
+  </div>
+</body>
+
+<script>
+    const translations = {
+        ar: {
+            title: "DermaLens • نتيجة غير مؤكدة",
+            heading: "عذراً، نتيجة غير مؤكدة ",
+            paragraph: "(لقد قمنا بتحليل الصورة، ولكن درجة الثقة في التشخيص كانت أقل من (٪٤٠." +
+                       " لذلك، لا يمكننا تقديم تشخيص موثوق في هذه المرحلة. الرجاء محاولة التقاط صورة أوضح أو زاوية مختلفة.",
+            button: "محاولة تحليل جديدة"
+        },
+        en: {
+            title: "DermaLens • Unknown Result",
+            heading: "Sorry, Unconfirmed Result",
+            paragraph: "We analyzed the image, but the confidence level in the diagnosis was below (40%)." +
+                       " Therefore, we cannot provide a reliable diagnosis at this stage. Please try capturing a clearer photo or a different angle.",
+            button: "Try New Analysis"
+        }
+    };
+
+    function switchLang(lang) {
+        document.documentElement.lang = lang;
+        document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+        // تعديل اتجاه القائمة المنسدلة حسب لغة RTL/LTR
+        const dropdown = document.querySelector('.dropdown');
+        if (dropdown) {
+            if (lang === "ar") {
+                dropdown.style.left = 'auto';
+                dropdown.style.right = '0';
+            } else {
+                dropdown.style.left = '0';
+                dropdown.style.right = 'auto';
+            }
+        }
+
+
+        document.querySelectorAll("[data-key]").forEach(el => {
+            const key = el.dataset.key;
+            let text = translations[lang][key];
+
+            if (el.tagName === "TITLE") {
+                document.title = text;
+            } else if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+                el.placeholder = text;
+            } else {
+                el.innerHTML = text;
+            }
+        });
+        // حفظ اللغة المختارة في localStorage
+        localStorage.setItem("lang", lang);
+    }
+
+    // تطبيق اللغة المحفوظة عند تحميل الصفحة
+    const savedLang = localStorage.getItem("lang") || "en"; // الإنجليزية كافتراضية
+    switchLang(savedLang);
+</script>
+
+</html>

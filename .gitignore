@@ -1,0 +1,9 @@
+# Python / Flask
+__pycache__/
+*.pyc
+flask_env/
+.env
+
+# Project Specific Files
+uploads/
+models/

@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Register - DermaLens</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='Main.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+
+  <style>
+    /* Override body background to use the animated global background */
+    body {
+      background: linear-gradient(135deg, #8B7355 0%, #A68B5B 50%, #8B7355 100%);
+      min-height: 100vh;
+      color: #2D1810;
+      font-family:  var(--main-font);
+      margin: 0;
+      padding: 0;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Moving background pattern */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-image: 
+          radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 2px, transparent 2px),
+          radial-gradient(circle at 75% 75%, rgba(255,255,255,0.08) 1px, transparent 1px),
+          radial-gradient(circle at 50% 50%, rgba(255,255,255,0.05) 3px, transparent 3px);
+      background-size: 100px 100px, 150px 150px, 200px 200px;
+      animation: moveBackground 25s ease-in-out infinite;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Animated moving elements */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+      animation: globalBackgroundRotate 20s linear infinite;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    /* Header styling */
+    .auth-header {
+      text-align: center;
+      padding: 2rem 0 1rem 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .auth-header h1 {
+      font-size: 3rem;
+      font-weight: bold;
+      color: #F5E6D3;
+      text-shadow: 0 0 30px rgba(245, 230, 211, 0.5);
+      animation: heroGlow 3s ease-in-out infinite alternate;
+      margin: 0;
+      font-family: var(--main-font);
+    }
+
+    @keyframes heroGlow {
+      0% { text-shadow: 0 0 30px rgba(245, 230, 211, 0.5); }
+      100% { text-shadow: 0 0 50px rgba(245, 230, 211, 0.8); }
+    }
+
+    .auth-card{
+      width:100%;
+      max-width:450px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(15px);
+      border-radius:15px;
+      box-shadow:0 20px 60px rgba(139, 115, 85, 0.3);
+      padding:38px 40px;
+      position: relative;
+      z-index: 2;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .auth-title{ 
+      font-weight:700; 
+      font-size:1.8rem; 
+      text-align:center; 
+      margin-bottom:.3rem; 
+      color: #2D1810;
+      font-family: var(--main-font);
+    }
+    
+    .auth-subtitle{ 
+      text-align:center; 
+      color:#555; 
+      font-size:.95rem; 
+      margin-bottom:1.5rem; 
+      font-family: var(--main-font);
+    }
+
+    .form-label{ 
+      font-size:12px; 
+      color:#5f5f5f; 
+      margin-bottom:.35rem; 
+      font-family: var(--main-font);
+    }
+    
+    .form-control{
+      background:#fafbfc; 
+      border:1px solid #e5e7eb; 
+      height:44px; 
+      font-size:.95rem; 
+      box-shadow:none !important;
+      font-family: var(--main-font);
+    }
+    .form-control::placeholder{ color:#a1a1a1; }
+
+    .btn-brown{
+      background: linear-gradient(135deg, #8B7355, #6B4A2F);
+      border:none; 
+      color:#fff; 
+      height:45px; 
+      font-weight:600; 
+      border-radius:5px;
+      font-family: var(--main-font);
+      transition: all 0.3s ease;
+    }
+    .btn-brown:hover{ 
+      background: linear-gradient(135deg, #6B4A2F, #8B7355);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 115, 85, 0.3);
+    }
+
+    .bottom-note{ 
+      font-size:.85rem; 
+      color:#b0b0b0; 
+      margin-top:14px; 
+      font-family: var(--main-font);
+    }
+    .bottom-note a{ 
+      text-decoration:none; 
+      font-weight:600; 
+      color:#7d6b54; 
+    }
+    .bottom-note a:hover{ text-decoration:underline; }
+
+    .avatar-preview{
+      width:70px; height:70px; border-radius:50%;
+      background:#f3f3f3 center/cover no-repeat;
+      border:1px solid #e5e7eb;
+    }
+    .hint{ 
+      font-size:.78rem; 
+      color:#7c7c7c; 
+      font-family: var(--main-font);
+    }
+
+    /* strength meter */
+    #strengthBar{ height:6px; border-radius:3px; }
+    .strength-weak{ width:33%; background:#dc3545; }
+    .strength-medium{ width:66%; background:#fd7e14; }
+    .strength-strong{ width:100%; background:#28a745; }
+    
+    .lang {
+      position: fixed;
+      z-index: 10;
+      font-size: 20px;
+      padding: 1rem;
+    }
+
+    .lang a {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <li class="lang"><a href="#"><i class="fa-solid fa-earth-americas"></i></a>
+
+    <div class="dropdown">
+      <a onclick="switchLang('ar')">عربي</a>
+      <a onclick="switchLang('en')">English</a>
+    </div>
+
+  </li>
+
+  <div class="auth-header">
+    <h1>DermaLens</h1>
+  </div>
+
+  <div class="container d-flex justify-content-center align-items-center" style="padding: 2rem 0;">
+    <div class="auth-card">
+      <h2 class="auth-title" data-key="Create">Create Account</h2>
+      <p class="auth-subtitle" data-key="started">Sign up to get started</p>
+
+     <form id="registerForm" novalidate enctype="multipart/form-data">
+    <div class="mb-3">
+        <label class="form-label" data-key="fname">Full Name</label>
+        <input type="text" class="form-control" name="fullname" data-key="inputfname" placeholder="Your Name" required>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" data-key="email">Email Address</label>
+        <input type="email" class="form-control" name="email" data-key="inputemail" placeholder="Enter Email" required>
+        <div id="email-error" class="text-danger mt-1 small"></div>
+
+    </div>
+
+    <div class="row g-3">
+        <div class="col-sm-6">
+            <label class="form-label" data-key="age">Age</label>
+            <input type="number" class="form-control" name="age" data-key="inputAge" placeholder="e.g., 22" min="13" max="120" >
+        </div>
+        <div class="col-sm-6">
+            <label class="form-label" data-key="phone">Phone Number</label>
+            <input type="tel" class="form-control" name="phone" placeholder="+9665XXXXXXXX" pattern="^\+?[0-9\s\-]{8,15}$" >
+        </div>
+    </div>
+
+    <div class="mb-3 mt-3">
+        <label class="form-label" data-key="Password">Password</label>
+        <input type="password" class="form-control" id="password" name="password" data-key="inputPassword"
+            placeholder="Enter Password" minlength="8" required>
+        <div class="progress mt-2">
+            <div id="strengthBar"></div>
+        </div>
+        <div class="hint mt-1" data-key="hint">Use at least 8 characters, including letters, numbers, and symbols.
+        </div>
+        <div id="general-error" class="text-danger mt-1 small"></div>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" data-key="Confirm">Confirm Password</label>
+        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+            data-key="inputConfirm" placeholder="Re-enter Password" required>
+    </div>
+
+    <div class="mb-2">
+        <label class="form-label" data-key="profile">Profile Photo <span class="text-muted">(optional)
+        </span></label>
+        <div class="d-flex align-items-center gap-3">
+            <div id="avatarPreview" class="avatar-preview"></div>
+            <div class="flex-grow-1">
+                <input class="form-control" type="file" id="avatar" name="avatar" accept="image/png, image/jpeg, image/webp">
+                <div class="hint mt-1" data-key="photoHint">JPG/PNG/WebP, up to ~2MB is ideal.</div>
+            </div>
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-brown w-100 mt-3" data-key="signup">Sign Up</button>
+</form>
+
+      <p class="bottom-note text-center" data-key="already">Already have an account? <a href="{{ url_for('index') }}">Log in</a></p>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('registerForm');
+    const pw = document.getElementById('password');
+    const cpw = document.getElementById('confirmPassword');
+    const strengthBar = document.getElementById('strengthBar');
+
+    function validatePasswords(){
+      if (cpw.value && pw.value !== cpw.value){
+        cpw.setCustomValidity("Passwords do not match");
+      } else {
+        cpw.setCustomValidity("");
+      }
+    }
+
+    function checkStrength(password){
+      let strength = 0;
+      if(password.length >= 8) strength++;
+      if(/[A-Z]/.test(password)) strength++;
+      if(/[0-9]/.test(password)) strength++;
+      if(/[^A-Za-z0-9]/.test(password)) strength++;
+
+      strengthBar.className = "";
+      if(strength <= 1){
+        strengthBar.classList.add("strength-weak");
+      } else if(strength === 2 || strength === 3){
+        strengthBar.classList.add("strength-medium");
+      } else if(strength >= 4){
+        strengthBar.classList.add("strength-strong");
+      }
+    }
+
+    pw.addEventListener('input', () => {
+      validatePasswords();
+      checkStrength(pw.value);
+    });
+    cpw.addEventListener('input', validatePasswords);
+
+    // Avatar preview
+    const avatarInput = document.getElementById('avatar');
+    const avatarPreview = document.getElementById('avatarPreview');
+    avatarInput.addEventListener('change', function(){
+      const file = this.files && this.files[0];
+      if (!file) {
+        avatarPreview.style.backgroundImage = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = e => { avatarPreview.style.backgroundImage = `url('${e.target.result}')`; };
+      reader.readAsDataURL(file);
+    });
+
+   // Submit handler - تم تحديث هذا القسم لاستخدام POST إلى مسار Flask وعرض الأخطاء Inline
+form.addEventListener('submit', function(e){
+    validatePasswords();
+    if(!form.checkValidity()){
+        e.preventDefault();
+        e.stopPropagation();
+        form.classList.add('was-validated');
+        return;
+    }
+
+    e.preventDefault(); 
+    
+    // 💡 الخطوة 1: مسح رسائل الأخطاء السابقة
+    document.getElementById('email-error').innerText = '';
+    document.getElementById('general-error').innerText = '';
+
+    const formData = new FormData(form);
+
+    fetch("{{ url_for('auth.signup_user') }}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(async response => {
+        const data = await response.json();
+
+        if (response.ok && data.token) {
+            // النجاح: حفظ التوكن والتوجيه
+            localStorage.setItem('loggedIn', 'true');
+            localStorage.setItem('authToken', data.token); 
+            
+            // يمكن استخدام تنبيه بسيط للنجاح أو التوجيه مباشرة
+            window.location.href = "{{ url_for('diagnosis') }}"; 
+            
+        } else {
+            // الفشل: عرض رسالة الخطأ Inline
+            const errorMessage = data.error || data.message || (document.documentElement.lang === "ar" ? "فشل التسجيل. تحقق من البيانات." : "Registration failed. Check the input.");
+
+            // 💡 الخطوة 2: تحديد مكان عرض الخطأ بناءً على محتوى الرسالة
+            if (errorMessage.includes('Email already exists') || errorMessage.includes('البريد الإلكتروني موجود بالفعل')) {
+                document.getElementById('email-error').innerText = errorMessage;
+            } else {
+                // عرض الأخطاء العامة (مثل الحقول المطلوبة الناقصة) تحت كلمة المرور
+                document.getElementById('general-error').innerText = errorMessage;
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error during registration:', error);
+        // عرض خطأ في الاتصال
+        document.getElementById('general-error').innerText = (document.documentElement.lang === "ar" ? "حدث خطأ في الاتصال بالخادم. تحقق من الشبكة." : "An error occurred during connection. Please check your network.");
+    });
+    
+}, false);
+
+    /* Change the language */
+  const translations = {
+      ar: {
+        Create: "إنشاء حساب",
+        started: "سجّل للبدء",
+        fname: "الاسم الكامل",
+        inputfname: "أدخل اسمك",
+        email: "البريد الإلكتروني",
+        inputemail: "أدخل البريد الإلكتروني",
+        age: "العمر",
+        inputAge: "مثال: 22",
+        phone: "رقم الجوال",
+        Password: "كلمة المرور",
+        inputPassword: "أدخل كلمة المرور",
+        hint: "استخدم 8 أحرف على الأقل، تتضمن حروفًا وأرقامًا ورموزًا.",
+        Confirm: "تأكيد كلمة المرور",
+        inputConfirm: "أعد إدخال كلمة المرور",
+        profile: "الصورة الشخصية <span class='text-muted'>(اختياري)</span>",
+        photoHint: "JPG/PNG/WebP، حتى ~2MB مثالي.",
+        signup: "إنشاء حساب",
+        // تم تصحيح رابط الترجمة هنا
+        already: "لديك حساب بالفعل؟ <a href='{{ url_for('index') }}'>تسجيل الدخول</a>"
+      },
+      en: {
+        Create: "Create Account",
+        started: "Sign up to get started",
+        fname: "Full Name",
+        inputfname: "Your Name",
+        email: "Email Address",
+        inputemail: "Enter Email",
+        age: "Age",
+        inputAge: "e.g., 22",
+        phone: "Phone Number",
+        Password: "Password",
+        inputPassword: "Enter Password",
+        hint: "Use at least 8 characters, including letters, numbers, and symbols.",
+        Confirm: "Confirm Password",
+        inputConfirm: "Re-enter Password",
+        profile: "Profile Photo <span class='text-muted'>(optional)</span>",
+        photoHint: "JPG / PNG / WebP, up to ~2MB is ideal.",
+        signup: "Sign Up",
+        // تم تصحيح رابط الترجمة هنا
+        already: "Already have an account? <a href='{{ url_for('index') }}'>Log in</a>"
+      }
+    };
+
+    function switchLang(lang) {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+      document.querySelectorAll("[data-key]").forEach(el => {
+        const key = el.dataset.key;
+        const text = translations[lang][key];
+
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = text;
+        } else {
+          el.innerHTML = text;
+        }
+      });
+      // save the chosen lang in localStorage
+      localStorage.setItem("lang", lang);
+    }
+
+    const savedLang = localStorage.getItem("lang") || "en";
+    switchLang(savedLang);
+  </script>
+</body>
+</html>

@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title data-key="title">Community • DermaLens</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='Main.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
+
+  <style>
+    /* ================================== */
+    /* 💡 تثبيت الشريط العلوي وإضافة الهوامش */
+    /* ================================== */
+    header {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background-color: #ffffff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+      z-index: 1000;
+    }
+
+    body {
+      padding-top: 70px;
+      /* مسافة تساوي ارتفاع شريط التنقل الثابت */
+    }
+
+    :root {
+      --primary-color: #533A1F;
+      --secondary-color: #A67C52;
+      --text-dark: #3f3223;
+      --error-color: #e74c3c;
+    }
+
+    /* 💡 تنسيقات قائمة البروفايل المنسدلة */
+    .profile-menu {
+      position: relative;
+    }
+
+    /* إخفاء القائمة المنسدلة افتراضياً */
+    #profileDropdown {
+      display: none;
+      position: absolute;
+      /* ✅ تعديل: لضمان التوافق مع RTL/LTR */
+      inset-inline-start: auto;
+      inset-inline-end: 0;
+      top: 100%;
+      background-color: white;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      min-width: 150px;
+      padding: 10px 0;
+      z-index: 100;
+    }
+
+    /* إظهار القائمة عند وجود فئة 'show' */
+    #profileDropdown.show {
+      display: block;
+    }
+
+    /* تنسيق العناصر داخل القائمة */
+    #profileDropdown a {
+      display: block;
+      padding: 8px 15px;
+      color: var(--text-dark);
+      text-decoration: none;
+      transition: background-color 0.2s;
+    }
+
+    #profileDropdown a:hover {
+      background-color: #f7f7f7;
+    }
+
+    .separator {
+      height: 1px;
+      background-color: #eee;
+      margin: 5px 0;
+    }
+
+    /* تنسيقات زر الإعجاب */
+    .comm-card-footer {
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+      margin-top: 15px;
+      display: flex;
+    }
+
+    .reaction-btn {
+      background: none;
+      border: none;
+      color: var(--secondary-color);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      font-size: 1rem;
+      transition: color 0.2s ease;
+    }
+
+    .reaction-btn:hover {
+      color: var(--primary-color);
+    }
+
+    .reaction-btn i {
+      margin-inline-end: 8px;
+      transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    /* ✅ لون القلب الممتلئ (عند الإعجاب) - أصبح أحمر الآن */
+    .reaction-btn i.fa-solid {
+      color: var(--error-color);
+    }
+
+    .site-footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      z-index: 1000;
+    }
+  </style>
+
+</head>
+
+<body>
+  <header>
+    <nav class="navigation container">
+
+      <div class="logo">
+        <a href="{{ url_for('diagnosis') }}">DermaLens</a>
+      </div>
+      <ul class="navLinks">
+        <li><a href="{{ url_for('history') }}" data-key="history">History</a></li>
+        <li><a href="{{ url_for('community') }}" data-key="community">Community</a></li>
+        <li><a href="{{ url_for('about') }}" data-key="about">About</a></li>
+
+        <li class="profile-menu">
+          <a href="#" id="profileDropdownToggle" title="Account Menu"><i class="fa-solid fa-circle-user"></i></a>
+
+          <div class="dropdown" id="profileDropdown">
+            <a href="#" data-key="profile" id="profileLink">Profile</a>
+            
+            <div class="separator" id="profileSeparator"></div> 
+
+            <div class="lang-options">
+              <a onclick="switchLang('ar')">عربي</a>
+              <a onclick="switchLang('en')">English</a>
+            </div>
+
+            <div class="separator" id="authSeparator"></div>
+
+            <a href="#" data-key="auth" id="authLink"> Logout</a>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="comm-hero">
+    <div class="container">
+      <div class="comm-hero-overlay">
+        <h1 data-key="experience">Share Your Experience</h1>
+        <p class="comm-hero-subtitle" data-key="experiencesub">Connect with others, share your journey, and find support
+          in our caring community</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="container">
+    <div class="comm-toolbar">
+      <a class="btn-create" href="{{ url_for('create_post') }}" data-key="newPost">
+        <i class="fa-solid fa-plus"></i> Create New Post
+      </a>
+
+      <div class="tag-picker" id="tagPicker" aria-label="Filter by disease">
+        <span class="picker-label" data-key="fliter">Filter by:</span>
+      </div>
+
+      <div class="comm-tabs">
+        <button class="tab-pill tab-active" data-mode="trending" data-key="trending">
+          <i class="fa-solid fa-fire-flame-curved"></i> Trending Stories
+        </button>
+        <button class="tab-pill" data-mode="recent" data-key="recent">
+          <i class="fa-regular fa-clock"></i> Recent Posts
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <main class="comm-feed container" id="posts-feed">
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      Dermalens. Copyright DERMALENS. All Rights Reserved
+    </div>
+  </footer>
+
+  <script>
+    // ===================================
+    // Logout
+    // ===================================
+    function logout() {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('loggedIn');
+      const currentLang = localStorage.getItem("lang") || "en";
+      alert(currentLang === 'ar' ? 'تم تسجيل الخروج بنجاح.' : 'Logged out successfully.');
+      window.location.href = "{{ url_for('login') }}";
+    }
+
+    // ===================================================
+    // UpdateAuthLink (Login/Logout & Profile visibility)
+    // ====================================================
+    function updateAuthLink() {
+      const token = localStorage.getItem('auth_token');
+      const authLink = document.getElementById('authLink');
+      const authSeparator = document.getElementById('authSeparator');
+      const profileLink = document.getElementById('profileLink');
+      const profileSeparator = document.getElementById('profileSeparator');
+      const currentLang = localStorage.getItem("lang") || "en";
+
+      if (!authLink || !profileLink || !profileSeparator) return;
+
+      if (token) {
+        // المستخدم مسجل دخول: عرض تسجيل الخروج والملف الشخصي
+        authLink.textContent = translations[currentLang]['logout'] || 'Log Out';
+        authLink.href = "#";
+        authLink.onclick = logout;
+        authLink.setAttribute('data-key', 'logout');
+
+        profileLink.style.display = 'block';
+        profileSeparator.style.display = 'block';
+        if (authSeparator) authSeparator.style.display = 'block';
+
+      } else {
+        // المستخدم غير مسجل دخول: عرض تسجيل الدخول وإخفاء الملف الشخصي
+        authLink.textContent = translations[currentLang]['login'] || 'Log In';
+        authLink.href = "{{ url_for('login') }}";
+        authLink.onclick = null;
+        authLink.setAttribute('data-key', 'login');
+
+        profileLink.style.display = 'none';
+        profileSeparator.style.display = 'none';
+        if (authSeparator) authSeparator.style.display = 'none';
+      }
+    }
+
+
+    // Initialize fade-in animations
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('fade-in');
+        }
+      });
+    }, observerOptions);
+
+    // Enhanced Tab Functionality (تبقى كما هي)
+    document.querySelectorAll('.comm-tabs .tab-pill').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.comm-tabs .tab-pill').forEach(x => x.classList.remove('tab-active'));
+        btn.classList.add('tab-active');
+
+        const mode = btn.dataset.mode;
+        const cards = [...document.querySelectorAll('.comm-card')];
+
+        if (mode === 'trending') {
+          cards.sort((a, b) => {
+            return (+b.dataset.reactions) - (+a.dataset.reactions);
+          });
+        } else {
+          cards.sort((a, b) => new Date(b.dataset.date) - new Date(a.dataset.date));
+        }
+
+        const feed = document.getElementById('posts-feed');
+        cards.forEach((card, index) => {
+          setTimeout(() => {
+            card.style.transform = 'translateY(20px)';
+            card.style.opacity = '0.5';
+            setTimeout(() => {
+              feed.appendChild(card);
+              card.style.transform = 'translateY(0)';
+              card.style.opacity = '1';
+            }, 150);
+          }, index * 50);
+        });
+      });
+    });
+
+    // Beautiful Tag Picker (تبقى كما هي)
+    const diseases = ["melanoma", "lupus", "ringworm", "eczema", "acne"];
+    const feedCards = [];
+    const picker = document.getElementById('tagPicker');
+    const selected = new Set();
+
+    function renderChips() {
+      diseases.forEach((tag, index) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'tag-chip';
+        chip.dataset.tag = tag;
+        chip.dataset.key = tag;
+        chip.innerHTML = `<i class="fa-solid fa-tag"></i> ${tag.charAt(0).toUpperCase() + tag.slice(1)}`;
+
+        chip.style.opacity = '0';
+        chip.style.transform = 'translateY(20px)';
+        setTimeout(() => {
+          chip.style.transition = 'all 0.3s ease';
+          chip.style.opacity = '1';
+          chip.style.transform = 'translateY(0)';
+        }, index * 100);
+
+        chip.addEventListener('click', () => {
+          if (selected.has(tag)) {
+            selected.delete(tag);
+            chip.classList.remove('active');
+          } else {
+            selected.add(tag);
+            chip.classList.add('active');
+          }
+          applyFilter();
+        });
+
+        picker.appendChild(chip);
+      });
+    }
+
+    function applyFilter() {
+      const currentFeedCards = [...document.querySelectorAll('.comm-card')];
+
+      if (selected.size === 0) {
+        let visibleIndex = 0;
+        currentFeedCards.forEach(card => {
+          setTimeout(() => {
+            card.style.display = '';
+            card.style.animation = `fadeInUp 0.4s ease ${visibleIndex * 0.1}s both`;
+          }, visibleIndex * 50);
+          visibleIndex++;
+        });
+        return;
+      }
+
+      let visibleIndex = 0;
+      currentFeedCards.forEach(card => {
+        const tags = (card.dataset.tags || '').toLowerCase().split(/\s+/);
+        const show = [...selected].some(t => tags.includes(t));
+
+        if (show) {
+          setTimeout(() => {
+            card.style.display = '';
+            card.style.animation = `fadeInUp 0.4s ease ${visibleIndex * 0.1}s both`;
+          }, visibleIndex * 50);
+          visibleIndex++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    renderChips();
+
+    // Smooth scrolling (معطل لزر الإعجاب)
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        if (this.getAttribute('href') !== '#') {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute('href'));
+          if (target) {
+            target.scrollIntoView({
+              behavior: 'smooth',
+              block: 'start'
+            });
+          }
+        }
+      });
+    });
+
+    /* Change the language (محدثة لـ login/logout) */
+    const translations = {
+      ar: {
+        title: "المجتمع • ديرما لنس",
+        history: "السجل",
+        community: "المجتمع",
+        about: "عنا",
+        profile: "الملف الشخصي",
+        logout: "تسجيل خروج",
+        login: "تسجيل الدخول", 
+        experience: "شاركنا تجربتك",
+        experiencesub: "تواصل مع الآخرين، شارك رحلتك، واحصل على الدعم في مجتمعنا الداعم والمهتم.",
+        newPost: "أنشئ منشور جديد",
+        fliter: "التصنيف حسب:",
+        trending: "القصص الرائجة",
+        recent: "أحدث المنشورات",
+        melanoma: "الميلانوما",
+        lupus: "الذئبة",
+        ringworm: "السعفة",
+        eczema: "الإكزيما",
+        acne: "حب الشباب"
+      },
+      en: {
+        title: "Community • DermaLens",
+        history: "History",
+        community: "Community",
+        about: "About",
+        profile: "Profile",
+        logout: "Log Out",
+        login: "Log In", 
+        experience: "Share Your Experience",
+        experiencesub: "Connect with others, share your journey, and find support in our caring community",
+        newPost: "Create New Post",
+        fliter: "Filter by:",
+        trending: "Trending Stories",
+        recent: "Recent Posts",
+        melanoma: "Melanoma",
+        lupus: "Lupus",
+        ringworm: "Ringworm",
+        eczema: "Eczema",
+        acne: "Acne"
+      }
+    };
+
+    function switchLang(lang) {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+      document.querySelectorAll("[data-key]").forEach(el => {
+        const icon = el.querySelector('i');
+        const key = el.dataset.key;
+
+        // Skip auth link, handled by updateAuthLink for dynamic text
+        if (key === 'auth' || key === 'login' || key === 'logout') return;
+
+        const text = translations[lang][key];
+
+        if (icon) {
+          el.innerHTML = '';
+          el.appendChild(icon);
+          el.appendChild(document.createTextNode(' ' + text));
+        } else if (el.tagName === 'TITLE') {
+          document.title = text;
+        } else {
+          el.textContent = text;
+        }
+      });
+
+      updateAuthLink();
+      localStorage.setItem("lang", lang);
+
+      // لإعادة ترجمة التاجات في الـ picker
+      document.querySelectorAll('.tag-chip').forEach(chip => {
+        const tagKey = chip.dataset.tag;
+        const icon = chip.querySelector('i');
+        const translatedText = translations[lang][tagKey];
+        if (icon && translatedText) {
+          chip.innerHTML = '';
+          chip.appendChild(icon);
+          chip.appendChild(document.createTextNode(' ' + translatedText.charAt(0).toUpperCase() + translatedText.slice(1)));
+        }
+      });
+    }
+
+
+    // ===================================
+    // 1. دالة عرض المنشور (محدثة للإعجاب)
+    // ===================================
+    function renderPost(post, lang) {
+      const formattedDate = new Date(post.created_at).toLocaleDateString(lang, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      const userName = post.creator_name || 'Anonymous User';
+      const fallbackAvatarUrl = `https://i.pravatar.cc/80?img=${post.user_id ? post.user_id.charCodeAt(0) % 70 : 1}`;
+      const avatarSource = post.profile_pic_url || fallbackAvatarUrl;
+
+      // تحديد ما إذا كان المنشور معجباً به من قبل المستخدم الحالي
+      const isLiked = post.is_liked_by_user === true;
+      const iconClass = isLiked ? 'fa-solid' : 'fa-regular';
+      const likedAttribute = isLiked ? 'data-liked="true"' : 'data-liked="false"';
+
+
+      // بناء قالب HTML للمنشور
+      return `
+        <article class="comm-card fade-in" 
+                 data-id="${post.id}"
+                 data-tags="${post.tag ? post.tag.toLowerCase() : ''}" 
+                 data-reactions="${post.likes_count}" 
+                 data-date="${post.created_at}">
+            <div class="comm-card-head">
+                <img class="avatar" src="${avatarSource}" alt="${userName}'s avatar">
+                <div>
+                    <div class="meta"><strong>${userName}</strong> • ${formattedDate}</div>
+                    <h3>${post.title}</h3>
+                </div>
+            </div>
+            <p>${post.body}</p>
+            
+            <div class="comm-card-footer">
+                <button class="reaction-btn" data-post-id="${post.id}" ${likedAttribute}>
+                    <i class="${iconClass} fa-heart"></i> 
+                    <span class="reaction-count">${post.likes_count}</span>
+                </button>
+            </div>
+        </article>
+    `;
+    }
+
+    // ===================================
+    // 💡 دالة لمعالجة النقر على زر الإعجاب (محدثة لطلب API)
+    // ===================================
+    
+    // ✅ FIX: تعريف المسار الأساسي خارج الدالة مع استخدام قيمة وهمية لحل مشكلة 'url_for'
+      const TOGGLE_LIKE_URL_BASE = `/auth/toggle_like/`;
+    async function handleReactionClick(e) {
+      e.stopPropagation();
+      const btn = e.currentTarget;
+      const postId = btn.dataset.postId;
+      const heart = btn.querySelector('i');
+      const countSpan = btn.querySelector('.reaction-count');
+      const token = localStorage.getItem('auth_token');
+      const currentLang = localStorage.getItem('lang') || 'en';
+      let currentLikedStatus = btn.dataset.liked === 'true';
+
+      
+      // 2. تحديث مؤقت لواجهة المستخدم (Optimistic UI Update)
+      const initialLikedStatus = currentLikedStatus;
+      let initialCount = parseInt(countSpan.textContent);
+
+      if (currentLikedStatus) {
+        // إلغاء إعجاب مؤقت
+        heart.classList.remove('fa-solid');
+        heart.classList.add('fa-regular');
+        btn.dataset.liked = 'false';
+        countSpan.textContent = Math.max(0, initialCount - 1);
+      } else {
+        // إعجاب مؤقت
+        heart.classList.remove('fa-regular');
+        heart.classList.add('fa-solid');
+        btn.dataset.liked = 'true';
+        countSpan.textContent = initialCount + 1;
+
+        // تأثير بصري بسيط
+        heart.style.transform = 'scale(1.3)';
+        setTimeout(() => { heart.style.transform = 'scale(1)'; }, 200);
+      }
+      
+      // 3. الاتصال بالخادم لتسجيل الإعجاب
+      try {
+        // ✅ استخدام المتغير الأساسي واستبدال القيمة الوهمية بمعرف المنشور الحقيقي
+        const finalUrl = `${TOGGLE_LIKE_URL_BASE}${postId}`;
+
+        const response = await fetch(finalUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token
+          }
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          // ✅ تم تحديث قاعدة البيانات بنجاح: تحديث UI بالبيانات الجديدة
+          
+          // تأكيد حالة الإعجاب والعدد من الخادم
+          btn.dataset.liked = data.is_liked ? 'true' : 'false';
+          countSpan.textContent = data.likes_count;
+          btn.closest('.comm-card').dataset.reactions = data.likes_count; // تحديث خاصية الترتيب
+          
+          if (data.is_liked) {
+            heart.classList.remove('fa-regular');
+            heart.classList.add('fa-solid');
+          } else {
+            heart.classList.remove('fa-solid');
+            heart.classList.add('fa-regular');
+          }
+          
+        } else {
+          // ❌ فشل الاتصال أو الخادم لم يستجب بنجاح: التراجع عن التحديث المؤقت (Rollback)
+          alert(currentLang === 'ar' ? 'فشل تسجيل الإعجاب. حاول مرة أخرى.' : 'Failed to register the like. Please try again.');
+          
+          // عكس حالة الأيقونة والعد
+          btn.dataset.liked = initialLikedStatus ? 'true' : 'false';
+          countSpan.textContent = initialCount;
+          
+          if (initialLikedStatus) {
+            heart.classList.remove('fa-regular');
+            heart.classList.add('fa-solid');
+          } else {
+            heart.classList.remove('fa-solid');
+            heart.classList.add('fa-regular');
+          }
+        }
+      } catch (error) {
+        console.error('Error during like API call:', error);
+        alert(currentLang === 'ar' ? 'فشل في الاتصال بالخادم.' : 'Connection failed.');
+        
+        // ❌ التراجع عن التحديث المؤقت في حالة وجود خطأ في الشبكة
+        btn.dataset.liked = initialLikedStatus ? 'true' : 'false';
+        countSpan.textContent = initialCount;
+        
+        if (initialLikedStatus) {
+          heart.classList.remove('fa-regular');
+          heart.classList.add('fa-solid');
+        } else {
+          heart.classList.remove('fa-solid');
+          heart.classList.add('fa-regular');
+        }
+      }
+    }
+
+    // 💡 دالة لإضافة مستمعي الأحداث لجميع أزرار الإعجاب
+    function addReactionListeners() {
+      document.querySelectorAll('.reaction-btn').forEach(btn => {
+        btn.removeEventListener('click', handleReactionClick);
+        btn.addEventListener('click', handleReactionClick);
+      });
+    }
+
+
+    // 2. دالة جلب المنشورات من الخادم (محدثة لاستخدام التوكن)
+    function fetchPosts(lang) {
+      const postsContainer = document.getElementById('posts-feed');
+      const API_URL = '{{ url_for("get_all_posts") }}';
+      const token = localStorage.getItem('auth_token');
+      
+      // إظهار رسالة التحميل
+      postsContainer.innerHTML = `<p style="text-align: center; color: var(--secondary-color); padding: 50px;"><i class="fas fa-spinner fa-spin"></i> ${lang === 'ar' ? 'جارٍ تحميل المنشورات...' : 'Loading posts...'}</p>`;
+
+      fetch(API_URL, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // ✅ إرسال التوكن لتمكين الخادم من تحديد حالة is_liked_by_user
+          'x-auth-token': token || '' 
+        }
+      })
+        .then(response => {
+          if (!response.ok) {
+            console.error('API call failed with status:', response.status);
+            throw new Error('Network response was not ok or authentication failed');
+          }
+          return response.json();
+        })
+        .then(data => {
+          if (data.success && data.posts && data.posts.length > 0) {
+            postsContainer.innerHTML = '';
+
+            data.posts.forEach(post => {
+              postsContainer.innerHTML += renderPost(post, lang);
+            });
+
+            addReactionListeners();
+
+            document.querySelectorAll('.comm-card').forEach(card => {
+              observer.unobserve(card);
+              observer.observe(card);
+            });
+
+            feedCards.length = 0;
+            feedCards.push(...document.querySelectorAll('.comm-card'));
+
+          } else {
+            postsContainer.innerHTML = `<p style="text-align: center; color: var(--text-light); padding: 50px;" class="no-posts-msg">${lang === 'ar' ? 'لا توجد منشورات حتى الآن. كن أول من ينشر!' : 'No posts yet. Be the first to post!'}</p>`;
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching posts:', error);
+          postsContainer.innerHTML = `<p style="text-align: center; color: var(--error-color); padding: 50px;" class="error-msg">${lang === 'ar' ? 'فشل تحميل المنشورات بسبب خطأ في الخادم.' : 'Failed to load posts due to a server error.'}</p>`;
+        });
+    }
+
+    // 3. إعداد تشغيل الصفحة
+    document.addEventListener('DOMContentLoaded', () => {
+      // 💡 منطق تبديل قائمة البروفايل المنسدلة
+      const profileToggle = document.getElementById('profileDropdownToggle');
+      const profileDropdown = document.getElementById('profileDropdown');
+      const profileLink = document.getElementById('profileLink');
+
+      if (profileToggle && profileDropdown) {
+        profileToggle.addEventListener('click', function (event) {
+          event.preventDefault();
+          event.stopPropagation();
+          profileDropdown.classList.toggle('show');
+        });
+
+        // إغلاق القائمة عند النقر خارجها
+        document.addEventListener('click', function (event) {
+          if (!profileDropdown.contains(event.target) && !profileToggle.contains(event.target)) {
+            profileDropdown.classList.remove('show');
+          }
+        });
+      }
+
+      // ✅ منطق حماية التوجيه لصفحة الملف الشخصي
+      if (profileLink) {
+        profileLink.addEventListener('click', function(event) {
+          const isLoggedIn = localStorage.getItem('auth_token');
+          const currentLang = localStorage.getItem('lang') || 'en';
+    
+          if (!isLoggedIn) {
+            event.preventDefault();
+            alert(currentLang === 'ar' ? "يجب تسجيل الدخول لعرض الملف الشخصي." : "You must log in to view the profile.");
+            window.location.href = "{{ url_for('login') }}";
+          } else {
+            // السماح بالانتقال إلى مسار الملف الشخصي المحمي
+            window.location.href = "{{ url_for('profile') }}";
+          }
+          if (profileDropdown) profileDropdown.classList.remove('show');
+        });
+      }
+
+      // تطبيق اللغة المحفوظة وجلب المنشورات
+      const currentLang = localStorage.getItem("lang") || "en";
+      switchLang(currentLang);
+
+      updateAuthLink();
+      fetchPosts(currentLang);
+    });
+  </script>
+</body>
+
+</html>

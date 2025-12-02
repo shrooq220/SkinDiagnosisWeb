@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='Main.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <title>DermaLens • Analysis</title>
+  <style>
+    /* Modal styles for error message (from first template) */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: none;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 400px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      color: #aaa;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    .close-btn:hover {
+      color: #000;
+    }
+
+    .modal-message {
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      margin-top: 10px;
+      padding: 10px;
+    }
+
+    .modal-message p {
+      margin: 0;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    /* Loading animation (from first template) */
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .start-analysis-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Footer styles - using fixed position from your previous code */
+    .site-footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      z-index: 1000;
+    }
+
+    /* Styles for profile menu visibility (missing from your current style block) */
+    .profile-menu .dropdown {
+        display: none;
+    }
+    .profile-menu.active .dropdown {
+        display: block;
+    }
+    
+  </style>
+</head>
+
+<body>
+  <header>
+    <nav class="navigation container">
+      <div class="logo">
+        <a href="{{ url_for('diagnosis') }}">DermaLens</a>
+      </div>
+
+      <ul class="navLinks">
+        <li><a href="{{ url_for('history') }}" data-key="history">History</a></li>
+        <li><a href="{{ url_for('community') }}" data-key="community">Community</a></li>
+        <li><a href="{{ url_for('about') }}" data-key="about">About</a></li>
+
+        <li class="profile-menu" id="profile-toggle">
+          <a href="#" title="Account Menu" id="profileDropdownToggle"><i class="fa-solid fa-circle-user"></i></a>
+
+          <div class="dropdown">
+            <a href="#" id="profileLink" data-key="profile">Profile</a>
+
+            <div class="separator"></div>
+
+            <div class="lang-options">
+              <a onclick="switchLang('ar')">عربي</a>
+              <a onclick="switchLang('en')">English</a>
+            </div>
+
+            <div class="separator" id="authSeparator"></div>
+
+            <a href="{{ url_for('logout') }}" data-key="auth" id="authLink">Log Out</a>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <section class="analysis-sec">
+    <div class="upload">
+      <label data-key="imageUpload" for="imageUpload"> Upload Your Image </label>
+      <input type="file" id="imageUpload" accept="image/png, image/jpg, image/jpeg" style="display: none;">
+
+      <p data-key="or">Or</p>
+
+      <label data-key="cameraCapture" for="cameraCapture"> Take a Picture </label>
+      <input type="file" id="cameraCapture" accept="image/*" capture="user" style="display: none;">
+    </div>
+
+    <div id="preview-container" style="margin-top:20px; text-align:center;">
+      <img id="previewImage" src="" alt="Preview"
+        style="max-width:300px; display:none; border-radius:8px; border:1px solid #ccc;" />
+    </div>
+
+    <div class="loading" id="loadingDiv">
+      <div class="spinner"></div>
+      <p data-key="Analyzing">Analyzing your image...</p>
+    </div>
+
+    <button data-key="analysis" class="start-analysis-btn" id="startAnalysisBtn" onclick="startAnalysis()">
+      Start Analysis</button>
+  </section>
+
+  <div id="errorModal" class="modal">
+    <div class="modal-content">
+      <button class="close-btn" onclick="closeModal()">&times;</button>
+      <div class="modal-message">
+        <p style="color: #333333;"><strong data-key="sorry">Sorry, we didn't recognize your skin condition.</strong></p>
+        <p style="color: #333333;" data-key="sorry2">We will improve it in the future.</p>
+      </div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="container">
+      Dermalens. Copyright DERMALENS. All Rights Reserved
+    </div>
+  </footer>
+
+  <script>
+    // ✅ دالة تسجيل الخروج الموحدة
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('loggedIn');
+      const lang = localStorage.getItem('lang') || 'en';
+      alert(lang === 'ar' ? 'تم تسجيل الخروج بنجاح.' : 'Logged out successfully.');
+      window.location.href = "{{ url_for('logout') }}";
+    }
+
+    // ✅ دالة لتحديث رابط المصادقة (تسجيل دخول/تسجيل خروج)
+    function updateAuthLink(lang) {
+      const authLink = document.getElementById('authLink');
+      const isLoggedIn = localStorage.getItem('loggedIn') === 'true' && localStorage.getItem('token');
+
+      if (!authLink) return;
+
+      if (isLoggedIn) {
+        authLink.textContent = translations[lang]['logout'];
+        authLink.setAttribute('onclick', 'logout()');
+        authLink.removeAttribute('href');
+      } else {
+        authLink.textContent = translations[lang]['login'];
+        authLink.setAttribute('href', '{{ url_for('login') }}');
+        authLink.removeAttribute('onclick');
+      }
+    }
+
+    const imageUpload = document.getElementById("imageUpload");
+    const cameraCapture = document.getElementById("cameraCapture");
+    const previewImage = document.getElementById("previewImage");
+    const startAnalysisBtn = document.getElementById("startAnalysisBtn");
+    const loadingDiv = document.getElementById("loadingDiv");
+    const errorModal = document.getElementById("errorModal");
+
+    let uploadedFile = null;
+
+    function showPreview(file) {
+      if (file) {
+        uploadedFile = file;
+        const reader = new FileReader();
+        reader.onload = e => {
+          previewImage.src = e.target.result;
+          previewImage.style.display = "block";
+          startAnalysisBtn.disabled = false;
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    imageUpload.addEventListener("change", () => {
+      const file = imageUpload.files[0];
+      showPreview(file);
+    });
+
+    cameraCapture.addEventListener("change", () => {
+      const file = cameraCapture.files[0];
+      showPreview(file);
+    });
+
+    // ===============================================
+    // وظيفة إرسال الصورة إلى مسار API (منطق قوي)
+    // ===============================================
+    async function startAnalysis() {
+      const currentLang = document.documentElement.lang || 'en';
+      const token = localStorage.getItem('token');
+      const analysisText = translations[currentLang].analysis;
+      const analyzingText = translations[currentLang].Analyzing;
+
+      if (!token) {
+        alert(currentLang === 'ar' ? "الرجاء تسجيل الدخول أولاً للمتابعة!" : "Please log in first to proceed!");
+        window.location.href = "{{ url_for('login') }}";
+        return;
+      }
+
+      if (!uploadedFile) {
+        alert(currentLang === 'ar' ? "الرجاء رفع صورة أولاً!" : "Please upload an image first!");
+        return;
+      }
+
+      // 1. إظهار رسالة التحميل وتعطيل الزر
+      loadingDiv.style.display = "block";
+      startAnalysisBtn.disabled = true;
+      startAnalysisBtn.textContent = analyzingText;
+
+      try {
+        // 2. إعداد البيانات والإرسال
+        const formData = new FormData();
+        formData.append('image', uploadedFile);
+
+        const response = await fetch('{{ url_for("api_analysis") }}', { // استخدام url_for
+          method: 'POST',
+          body: formData,
+          // إرسال الرمز المميز في الرأس
+          headers: {
+            'x-auth-token': token
+          },
+        });
+
+        const data = await response.json();
+
+        // 3. إخفاء التحميل وإعادة تفعيل الزر
+        loadingDiv.style.display = "none";
+        startAnalysisBtn.disabled = false;
+        startAnalysisBtn.textContent = analysisText;
+
+        if (response.ok && data.success) {
+          // النجاح: توجيه المستخدم باستخدام المسار المسترجع من الخلفية
+          const resultUrl = data.details_url;
+          window.location.href = resultUrl;
+
+        } else {
+          // الفشل: إظهار رسالة الخطأ
+          showErrorModal();
+          console.error("Analysis Failed:", data.error || data.message || "Unknown API error.");
+        }
+      } catch (error) {
+        // خطأ شبكة أو غير متوقع
+        console.error("Network or Unexpected Error:", error);
+        loadingDiv.style.display = "none";
+        startAnalysisBtn.disabled = false;
+        startAnalysisBtn.textContent = analysisText;
+        showErrorModal();
+      }
+    }
+
+    // ===============================================
+    // وظائف التحكم بالـ Modal
+    // ===============================================
+    function showErrorModal() {
+      errorModal.style.display = "block";
+    }
+
+    function closeModal() {
+      errorModal.style.display = "none";
+    }
+
+    // Close modal when clicking outside of it
+    window.onclick = function (event) {
+      if (event.target == errorModal) {
+        closeModal();
+      }
+    }
+
+    // Initially disable the start analysis button
+    startAnalysisBtn.disabled = true;
+
+    /* Change the language */
+    const translations = {
+      ar: {
+        history: "السجل",
+        community: "المجتمع",
+        about: "عنا",
+        imageUpload: "ارفع صورتك",
+        or: "أو",
+        cameraCapture: "التقط صورة",
+        analysis: "أبدأ التحليل",
+        Analyzing: "يتم تحليل صورتك...",
+        sorry: "عذرًا، لم نتمكن من التعرف على حالتك الجلدية.",
+        sorry2: "سنعمل على تحسين ذلك في المستقبل.",
+        // المفاتيح المضافة لتصحيح مشكلة undefined:
+        profile: "الملف الشخصي",
+        logout: "تسجيل خروج",
+        login: "تسجيل الدخول",
+        auth: "تسجيل خروج" // يُستخدم كقيمة افتراضية
+      },
+      en: {
+        history: "History",
+        community: "Community",
+        about: "About",
+        imageUpload: "Upload Your Image",
+        or: "Or",
+        cameraCapture: "Take a Picture",
+        analysis: "Start Analysis",
+        Analyzing: "Analyzing your image...",
+        sorry: "Sorry, we didn't recognize your skin condition.",
+        sorry2: "We will improve it in the future.",
+        // المفاتيح المضافة لتصحيح مشكلة undefined:
+        profile: "Profile",
+        logout: "Log Out",
+        login: "Log In",
+        auth: "Log Out"
+      }
+    };
+
+    function switchLang(lang) {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+      document.querySelectorAll("[data-key]").forEach(el => {
+        const icon = el.querySelector('i');
+        const text = translations[lang][el.dataset.key];
+
+        if (text) {
+          if (icon) {
+            el.innerHTML = '';
+            el.appendChild(icon);
+            el.appendChild(document.createTextNode(' ' + text));
+          } else {
+            el.innerHTML = text;
+          }
+        }
+      });
+      
+      // ✅ تحديث رابط المصادقة بعد تحديث اللغة
+      updateAuthLink(lang);
+
+      // save the chosen lang in localStorage
+      localStorage.setItem("lang", lang);
+    }
+
+    const savedLang = localStorage.getItem("lang") || "en";
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        const profileToggle = document.getElementById('profile-toggle');
+        const profileLink = document.getElementById('profileLink'); // ✅ تحديد رابط الملف الشخصي
+        
+        // تطبيق اللغة أولاً لتظهر الترجمات بشكل صحيح
+        switchLang(savedLang);
+
+        // ✅ إضافة منطق حماية التوجيه لصفحة الملف الشخصي
+        if (profileLink) {
+            profileLink.addEventListener('click', function(event) {
+                const isLoggedIn = localStorage.getItem('loggedIn') === 'true' && localStorage.getItem('token');
+                const currentLang = localStorage.getItem('lang') || 'en';
+    
+                if (!isLoggedIn) {
+                    event.preventDefault(); // منع التوجيه الافتراضي
+                    alert(currentLang === 'ar' ? "يجب تسجيل الدخول لعرض الملف الشخصي." : "You must log in to view the profile.");
+                    window.location.href = "{{ url_for('login') }}"; // التوجيه لصفحة تسجيل الدخول
+                } else {
+                    // إذا كان مسجل للدخول، قم بالتوجيه إلى مسار الملف الشخصي المحمي
+                    window.location.href = "{{ url_for('profile') }}";
+                }
+                // إغلاق القائمة المنسدلة
+                profileToggle.classList.remove('active'); 
+            });
+        }
+
+
+        if (profileToggle) {
+            profileToggle.addEventListener('click', function (event) { 
+                // منع التنقل إذا تم النقر على أيقونة القائمة الرئيسية
+                if (event.target.tagName !== 'A' || event.target.id === 'profileDropdownToggle') {
+                    event.preventDefault(); 
+                }
+                this.classList.toggle('active'); 
+            });
+
+            // إغلاق القائمة عند النقر خارجها
+            document.addEventListener('click', (event) => {
+                if (!profileToggle.contains(event.target)) {
+                    profileToggle.classList.remove('active');
+                }
+            });
+        }
+
+        // تحديث رابط المصادقة عند تحميل الصفحة (لضمان حالة الزر الصحيحة)
+        updateAuthLink(savedLang); 
+    });
+  </script>
+</body>
+
+</html>

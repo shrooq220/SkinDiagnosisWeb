@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Create a New Post - DermaLens</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='Main.css') }}" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
+  <style>
+    /* ============ TOKENS ============ */
+    :root{
+      --primary-color:#533A1F;
+      --secondary-color:#E4C5AC;
+      --text-dark:#3f3223;
+      --text-light:#7a6b59;
+      --border-color:#e5d9cd;
+      --error-color:#b04b4b;
+      --button-color:#A67C52;
+      --button-hover:#8C6A45;
+      --ctrl-h:44px;
+      --ctrl-r:12px;
+      --ctrl-pad-x:16px;
+    }
+    *{ box-sizing:border-box; margin:0; padding:0; }
+    body{
+      font-family:var(--main-font);
+      background:#FFF5EC;
+      color:var(--text-dark);
+      line-height:1.6;
+    }
+/* ============ NAVIGATION ============ */
+    .navigation{
+      display:flex; justify-content:space-between; align-items:center;
+      padding:15px 30px; background:#fff; box-shadow:0 2px 4px rgba(0,0,0,.05);
+    }
+    .logo a{ font-size:24px; font-weight:700; color:var(--primary-color); text-decoration:none; }
+    .navLinks{ display:flex; list-style:none; align-items:center; gap:20px; }
+    .navLinks a{ color:var(--text-dark); text-decoration:none; font-weight:500; transition:.2s; }
+    .navLinks a:hover, .navLinks a.active{ color:var(--button-color); }
+
+    /* Profile Dropdown Specific Styles */
+    .profile-menu{
+      position: relative; 
+    }
+    .profile-menu a i{ font-size:24px; }
+    .dropdown{
+      position: absolute; top:100%; right:0; width:220px; 
+      background:#fff; border:1px solid var(--border-color); border-radius:12px;
+      box-shadow:0 6px 16px rgba(0,0,0,.1); overflow:hidden;
+      display:none; padding:10px 0; z-index:10; 
+    }
+    .profile-menu.show .dropdown{ display:block; }
+    .dropdown a{ display:block; padding:8px 15px; font-weight:400; font-size:15px; }
+    .dropdown a:hover{ background:var(--secondary-color); color:var(--text-dark); }
+    .dropdown a:active{ background:var(--border-color); }
+    .separator{ height:1px; background:var(--border-color); margin:5px 0; }
+    .lang-options{ display:flex; justify-content:space-around; padding:5px 0; }
+    .lang-options a{ padding:4px 8px; font-size:14px; border-radius:4px; }
+    .lang-options a:hover{ background:var(--border-color); }
+
+
+/* ============ HERO (image behind title) ============ */
+    .comm-hero{
+      position:relative;
+      background:
+        linear-gradient(rgba(0,0,0,.28),rgba(0,0,0,.18)),
+        url("{{ url_for('static', filename='Pics/istockphoto-1311055822-612x612.jpg') }}") center/cover no-repeat; 
+      height:280px; color:#fff; display:flex; align-items:center; justify-content:center;
+    }
+    .comm-hero h1{ font-size:44px; font-weight:700; text-shadow:0 2px 14px rgba(0,0,0,.35); }
+
+    /* ============ CREATE POST ============ */
+   .create-wrap{ padding:40px 20px 60px; max-width:900px; margin:0 auto; }
+    .create-card{
+      background:#E4C5AC; border:1px solid #d9bba3; border-radius:14px;
+      box-shadow:0 10px 24px rgba(0,0,0,.06); padding:30px; margin-top:20px; overflow:hidden;
+    }
+    .btn-ghost-sm{
+      display:inline-flex; align-items:center; gap:6px; padding:8px 12px;
+      border:none; background:transparent; color:var(--text-dark);
+      font-weight:600; font-size:15px; text-decoration:none; border-radius:6px; transition:.2s;
+    }
+    .btn-ghost-sm:hover{ background:rgba(255,255,255,.3); text-decoration:none; }
+
+    .create-form{ display:flex; flex-direction:column; gap:20px; }
+    .field{ display:flex; flex-direction:column; gap:6px; }
+    .field label{ font-weight:600; color:var(--text-dark); font-size:15px; }
+    .req{ color:var(--error-color); }
+    .help{ color:var(--text-light); font-size:.85rem; margin-top:2px; }
+
+    .input-same, select.input-same, .textarea-same{
+      width:100%; border:1px solid var(--border-color); border-radius:var(--ctrl-r);
+      background:#fff; color:var(--text-dark); font-size:16px; outline:none; transition:.2s;
+      font-family: var(--main-font);
+      box-sizing: border-box; 
+    }
+    
+    .input-same{ 
+      height:var(--ctrl-h); 
+      padding:10px var(--ctrl-pad-x); 
+    }
+    .textarea-same{ padding:10px 14px; min-height:160px; resize:vertical; }
+
+   select.input-same{
+      height: var(--ctrl-h); 
+      padding:10px 36px 10px var(--ctrl-pad-x); 
+
+      -webkit-appearance:none; appearance:none; 
+      background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath fill='%237a6b59' d='M4 6l4 4 4-4z'/%3E%3C/svg%3E");
+      background-repeat:no-repeat; background-position:right 12px center; background-size:12px 12px;
+    }
+
+    .input-same:focus, .textarea-same:focus, select.input-same:focus{
+      border-color:var(--primary-color);
+      box-shadow:0 0 0 3px rgba(83,58,31,.2);
+    }
+
+    .switch-row{ display:flex; align-items:center; gap:10px; margin-top:10px; }
+    .switch-row input[type="checkbox"]{ width:18px; height:18px; accent-color:var(--primary-color); }
+
+    .actions{
+      display:flex; justify-content:flex-end; gap:12px; margin-top:24px; flex-wrap:wrap;
+    }
+    .btn-ghost, .btn-same{
+      display:inline-flex; align-items:center; justify-content:center;
+      padding:12px 24px; border-radius:var(--ctrl-r); font-weight:600; font-size:16px;
+      cursor:pointer; transition:.2s; text-decoration:none; border:1px solid var(--button-color);
+      background:var(--button-color); color:#fff;
+    }
+    .btn-ghost:hover, .btn-same:hover{ background:var(--button-hover); transform:translateY(-1px); }
+    .btn-ghost:focus, .btn-same:focus, .btn-ghost:active, .btn-same:active{ text-decoration:none; }
+
+    /* responsive */
+    @media (max-width:860px){
+      .create-card{ padding:20px; }
+      .actions{ flex-direction:column; }
+      .btn-ghost, .btn-same{ width:100%; }
+    }
+    @media (max-width:600px){
+      .comm-hero h1{ font-size:32px; }
+      .navigation{ flex-direction:column; gap:10px; }
+      .navLinks{ width:100%; justify-content:center; }
+    }
+   .site-footer {
+  /* لتثبيت موضعه بالنسبة لنافذة العرض */
+  position: fixed; 
+  /* وضعه في الأسفل */
+  bottom: 0; 
+  /* جعله يغطي عرض الشاشة بالكامل */
+  width: 100%; 
+  /* لضمان ظهوره فوق العناصر الأخرى (رقم كبير) */
+  z-index: 1000; 
+}
+</style>
+</head>
+<body>
+  <header>
+      <nav class="navigation">
+        <div class="logo">
+          <a href="{{ url_for('diagnosis') }}">DermaLens</a>
+        </div>
+        <ul class="navLinks">
+          <li><a href="{{ url_for('history') }}" data-key="history">History</a></li>
+          <li><a href="{{ url_for('community') }}" data-key="community">Community</a></li>
+          <li><a href="{{ url_for('about') }}" data-key="about">About</a></li>
+
+          <li class="profile-menu">
+            <a href="#" id="profileDropdownToggle" title="Account Menu"><i class="fa-solid fa-circle-user"></i></a>
+
+            <div class="dropdown" id="profileDropdown">
+              <a href="{{ url_for('profile') }}" data-key="Profile"> Profile </a>
+
+              <div class="separator"></div>
+
+              <div class="lang-options">
+                <a onclick="switchLang('ar')">عربي</a>
+                <a onclick="switchLang('en')">English</a>
+              </div>
+
+              <div class="separator" id="authSeparator"></div>
+
+              <a href="#" data-key="auth" id="authLink">Logout</a>
+            </div>
+          </li>
+          </ul>
+      </nav>
+    </header>
+  <section class="comm-hero">
+   <h1 data-key="create">Create a New Post</h1>
+  </section>
+
+  <main class="create-wrap">
+    <div class="create-card">
+      <div class="create-header">
+        <a href="{{ url_for('community') }}"  class="btn-ghost-sm" data-key="back"><i class="fas fa-arrow-left"></i> Back to
+          Community</a>
+        </div>
+
+      <form class="create-form" id="postForm">
+        <div class="field">
+        <label for="post-tag" data-key="tag">Tag <span class="req">*</span></label>
+       <select id="post-tag" name="tag" required class="input-same"> <option value="Melanoma" data-key="melanoma">Melanoma</option>
+        <option value="Lupus" data-key="lupus">Lupus</option>
+        <option value="Ringworm" data-key="ringworm">Ringworm</option>
+        <option value="Eczema" data-key="eczema">Eczema</option>
+        <option value="Acne" data-key="acne">Acne</option>
+       </select>  
+        </div>
+       
+
+        <div class="field">
+          <label for="title" data-key="title">Title <span class="req">*</span></label>
+          <input type="text" id="title" class="input-same" data-key="titleInput"
+            placeholder="Write a clear, helpful title" required maxlength="130" />
+          <div class="help" id="titleHelp">0/130</div>
+        </div>
+
+        <div class="field">
+          <label for="post-body" data-key="body">Post Body <span class="req">*</span></label>
+          <textarea id="post-body" class="textarea-same" data-key="bodyInput"
+            placeholder="Share your question or experience..." required></textarea>
+          <div class="help" data-key="help">Community advice is not medical diagnosis. Avoid personal identifiers.</div>
+        </div>
+        
+        <div class="actions">
+          <button type="button" class="btn-ghost" data-key="cancel" id="cancelBtn">Cancel</button>
+          <button type="submit" class="btn-same" data-key="publish">Publish Post</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <script>
+    // Live title counter
+    const titleInput = document.getElementById('title');
+    const titleHelp = document.getElementById('titleHelp');
+    titleInput.addEventListener('input', () => {
+      const n = titleInput.value.length;
+      titleHelp.textContent = `${n}/130`;
+      titleHelp.style.color = n > 130 ? 'var(--error-color)' : 'var(--text-light)';
+    });
+
+    document.getElementById('cancelBtn').addEventListener('click', () => {
+      window.location.href = '{{ url_for('community') }}';
+    });
+
+    document.getElementById('postForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (titleInput.value.length > 130) {
+        alert(document.documentElement.lang === "ar" ? "العنوان يجب أن يكون 130 حرف أو أقل" : 'Title must be 130 characters or less');
+        return;
+      }
+      
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert(document.documentElement.lang === "ar" ? 'يرجى تسجيل الدخول أولاً للمشاركة.' : 'Please log in first to participate.');
+        window.location.href = '{{ url_for('login') }}'; 
+        return;
+      }
+
+      const form = e.target;
+      const data = {
+        tag: form.elements['tag'].value,
+        title: form.elements['title'].value,
+        body: form.elements['post-body'].value, 
+      };
+
+      try {
+        const publishButton = document.querySelector('.btn-same');
+        const originalText = publishButton.innerHTML;
+        publishButton.disabled = true;
+        publishButton.innerHTML = (document.documentElement.lang === "ar" ? 'نشر...' : 'Publishing...');
+
+
+        const response = await fetch('/api/posts', { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-auth-token': token
+          },
+          body: JSON.stringify(data),
+        });
+
+        const result = await response.json();
+
+       if (response.ok) {
+          alert(document.documentElement.lang === "ar" ? 'تم نشر منشورك بنجاح! سيتم نقلك إلى صفحة المجتمع.' : 'Your post has been published successfully! Redirecting to community page.');
+          window.location.href = '{{ url_for('community') }}'; 
+        } else {
+          const errorMsg = result.error || (document.documentElement.lang === "ar" ? 'فشل النشر بسبب خطأ في الخادم.' : 'Publishing failed due to a server error.');
+          alert(errorMsg);
+        }
+      } catch (error) {
+        console.error('Network Error:', error);
+        alert(document.documentElement.lang === "ar" ? 'خطأ في الاتصال. يرجى التحقق من اتصالك بالإنترنت.' : 'Connection error. Please check your internet connection.');
+      } finally {
+        const publishButton = document.querySelector('.btn-same');
+        publishButton.disabled = false;
+        publishButton.innerHTML = originalText; 
+      }
+    });
+
+    // 💡 وظيفة تبديل القائمة المنسدلة في الشريط العلوي (Navbar)
+    document.getElementById('profileDropdownToggle').addEventListener('click', function(e) {
+        e.preventDefault();
+        const profileMenu = this.closest('.profile-menu');
+        profileMenu.classList.toggle('show');
+    });
+
+    // Close the dropdown if the user clicks outside of it
+    window.addEventListener('click', function(e) {
+        const profileMenu = document.querySelector('.profile-menu');
+        // تأكد من أن النقر ليس على الزر نفسه أو داخل القائمة
+        if (profileMenu && !profileMenu.contains(e.target) && e.target !== document.getElementById('profileDropdownToggle')) {
+            profileMenu.classList.remove('show');
+        }
+    });
+
+
+    /* Change the language and Update Auth Link */
+    // ⚠️ ملاحظة: يجب التأكد من تمرير translations كـ dict في دالة Flask
+    const translations = {{ translations | tojson | safe }}; 
+    
+    // 💡 وظيفة جديدة لتحديث رابط تسجيل الدخول/الخروج (Auth Link)
+    function updateAuthLink(lang) {
+        const authLink = document.getElementById('authLink');
+        if (!authLink) return; // حماية في حال عدم وجود العنصر
+
+        const token = localStorage.getItem('token');
+        
+        if (token) {
+            // المستخدم مسجل دخوله: عرض "تسجيل الخروج"
+            authLink.innerHTML = lang === 'ar' ? 'تسجيل الخروج' : 'Logout';
+            authLink.href = "#"; // أو أي رابط dummy
+            // تعيين وظيفة النقر للخروج
+            authLink.onclick = function(e) {
+                e.preventDefault();
+                localStorage.removeItem('token');
+                window.location.reload(); 
+            };
+        } else {
+            // المستخدم غير مسجل دخوله: عرض "تسجيل الدخول"
+            authLink.innerHTML = lang === 'ar' ? 'تسجيل الدخول' : 'Login';
+            // تعيين مسار صفحة تسجيل الدخول
+            authLink.href = '{{ url_for('login') }}'; 
+            authLink.onclick = null; // إزالة معالج الأحداث ليعمل href الطبيعي
+        }
+    }
+
+
+    function switchLang(lang) {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+      document.querySelectorAll("[data-key]").forEach(el => {
+        const key = el.dataset.key;
+        // 💡 تحديث: تجنب تحديث رابط 'auth' هنا
+        if (key === 'auth') return;
+
+        const text = translations[lang] && translations[lang][key] ? translations[lang][key] : el.innerHTML;
+
+
+        if (el.tagName === "INPUT" || el.tagName === "TEXTAREA") {
+          el.placeholder = text;
+        } else {
+          el.innerHTML = text; 
+        }
+      });
+      
+      // 💡 استدعاء الدالة الجديدة لتحديث رابط الدخول/الخروج بعد الترجمة
+      updateAuthLink(lang);
+      
+      localStorage.setItem("lang", lang);
+    }
+
+    // 💡 الاستدعاء عند تحميل الصفحة
+    const savedLang = localStorage.getItem("lang") || "en";
+    switchLang(savedLang);
+  </script>
+</body>
+  <div class="page-wrapper">
+    <footer class="site-footer">
+      <div class="container">
+        Dermalens. Copyright DERMALENS. All Rights Reserved
+      </div>
+    </footer>
+  </div>
+
+</html>

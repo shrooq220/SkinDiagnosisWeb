@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profile - DermaLens</title>
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='Main.css') }}">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" />
+
+  <style>
+    :root{
+      --brand-brown:#a18664;
+      --brand-brown-hover:#8b7358;
+      --panel-bg:#fff;
+      --muted:#6b7280;
+      --soft-border:#e5e7eb;
+      --input-bg:#fafbfc;
+      --panel-w:720px;
+    }
+
+    /* *************************************** */
+    /* ✅ إضافة تنسيق (CSS) لتمييز الصفحة النشطة */
+    /* *************************************** */
+    .navigation .navLinks li a:hover,
+    .navigation .navLinks li.active-page > a,
+    .navigation .navLinks li.profile-menu.active-page > a {
+        color: var(--brand-brown); 
+        font-weight: 600;
+    }
+    /* ✅ تعديل: تمييز الملف الشخصي داخل القائمة المنسدلة */
+    .profile-menu .dropdown a.active {
+        color: var(--brand-brown); 
+        font-weight: 600;
+    }
+    /* *************************************** */
+
+    .profile-card{
+      width:100%;
+      max-width:var(--panel-w);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(15px);
+      border-radius:15px;
+      box-shadow:0 20px 60px rgba(139, 115, 85, 0.3);
+      padding:34px 36px;
+      margin:24px auto;
+      position: relative;
+      z-index: 2;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .form-label{ 
+      font-size:12px; 
+      color:#5f5f5f; 
+      margin-bottom:.35rem; 
+      font-family: var(--main-font);
+    }
+    
+    .form-control{
+      background:var(--input-bg); 
+      border:1px solid var(--soft-border);
+      height:44px; 
+      font-size:.95rem; 
+      box-shadow:none !important;
+      font-family: var(--main-font);
+    }
+    .form-control:disabled{ background:#f7f7f7; color:#555; }
+    .input-group-text{ background:var(--input-bg); border:1px solid var(--soft-border); }
+
+    .btn-brown{
+      background: linear-gradient(135deg, #8B7355, #6B4A2F);
+      border:none; 
+      color:#fff; 
+      height:44px; 
+      font-weight:600; 
+      border-radius:6px;
+      font-family: var(--main-font);
+      transition: all 0.3s ease;
+    }
+    .btn-brown:hover{ 
+      background: linear-gradient(135deg, #6B4A2F, #8B7355);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(139, 115, 85, 0.3);
+    }
+
+    .btn-outline-brown{
+      background:#fff; 
+      color:#3b3b3b; 
+      border:1px solid #cdb89f; 
+      height:44px; 
+      font-weight:600; 
+      border-radius:6px;
+      font-family: var(--main-font);
+      transition: all 0.3s ease;
+    }
+    .btn-outline-brown:hover{ 
+      background:#faf7f3; 
+      border-color:#bda789; 
+      transform: translateY(-2px);
+    }
+
+    .avatar{
+      width:84px; height:84px; border-radius:50%;
+      background:#f3f3f3 center/cover no-repeat;
+      border:1px solid var(--soft-border);
+    }
+    .hint{ 
+      font-size:.8rem; 
+      color:#777; 
+      font-family: var(--main-font);
+    }
+
+    /* Strength UI (no layout shift) */
+    .strength-wrap{ min-height:72px; }
+    .progress{ height:10px; background:#f1f5f9; border-radius:6px; }
+    .progress-bar{ border-radius:6px; transition:width .25s ease; }
+    .strength-text{ 
+      font-size:.8rem; 
+      color:var(--muted); 
+      font-family: var(--main-font);
+    }
+    .criteria{
+      list-style:none; padding:0; margin:.25rem 0 0; min-height:120px; font-size:.9rem; color:var(--muted);
+    }
+    .criteria li{ 
+      display:flex; 
+      align-items:center; 
+      gap:.45rem; 
+      line-height:1.25rem; 
+      font-family: var(--main-font);
+    }
+    .criteria .ci{ flex:0 0 18px; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+    .criteria li .ci::before{
+      font-family:"bootstrap-icons"; content:"\f623"; color:#dc3545; font-size:1rem;
+    }
+    .criteria li.ok .ci::before{ content:"\f26a"; color:#198754; }
+
+    .view-only-badge{ 
+      font-size:.85rem; 
+      color:#666; 
+      font-family: var(--main-font);
+    }
+
+    /* Profile specific styling */
+    .profile-header {
+      margin-bottom: 2rem;
+    }
+
+    .profile-header h2 {
+      font-family: var(--main-font);
+      color: #2D1810;
+      font-weight: 700;
+    }
+
+    /* Container styling to work with global background */
+    .profile-container {
+      position: relative;
+      z-index: 2;
+      min-height: 80vh;
+      display: flex;
+      align-items: center;
+      padding: 2rem 0;
+    }
+
+    .site-footer {
+  /* لتثبيت موضعه بالنسبة لنافذة العرض */
+  position: fixed; 
+  /* وضعه في الأسفل */
+  bottom: 0; 
+  /* جعله يغطي عرض الشاشة بالكامل */
+  width: 100%; 
+  /* لضمان ظهوره فوق العناصر الأخرى (رقم كبير) */
+  z-index: 1000; 
+}
+
+  </style>
+</head>
+<body>
+  <header>
+    <nav class="navigation container">
+     <div class="logo">
+          <a href="{{ url_for('diagnosis') }}">DermaLens</a>
+        </div>
+        <ul class="navLinks">
+          <li><a href="{{ url_for('history') }}" data-key="history">History</a></li>
+          <li><a href="{{ url_for('community') }}" data-key="community">Community</a></li>
+          <li><a href="{{ url_for('about') }}" data-key="about">About</a></li>
+
+          <li class="profile-menu active-page">
+            <a href="#" id="profileDropdownToggle" title="Account Menu"><i class="fa-solid fa-circle-user"></i></a>
+
+            <div class="dropdown" id="profileDropdown">
+              <a href="{{ url_for('profile') }}" data-key="profile">الملف الشخصي</a> 
+
+              <div class="separator"></div>
+
+              <div class="lang-options">
+                <a onclick="switchLang('ar')">عربي</a>
+                <a onclick="switchLang('en')">English</a>
+              </div>
+
+              <div class="separator" id="authSeparator"></div>
+
+              <a href="#" data-key="auth" id="authLink">تسجيل الدخول</a> 
+            </div>
+          </li>
+          </ul>
+      </nav>
+    </header>
+
+
+  <div class="container profile-container">
+    <div class="profile-card">
+      <div class="profile-header d-flex justify-content-between align-items-center mb-4">
+        <div>
+          <h2 class="m-0 fw-bold" data-key="profile">Profile</h2>
+        <div id="modeBadge" class="view-only-badge" data-key="view">View mode</div>
+      </div>
+      <div>
+        <button id="editBtn" class="btn btn-brown" data-key="edit">Edit</button>
+        <button id="saveBtn" class="btn btn-brown d-none" data-key="save">Save</button>
+        <button id="cancelBtn" class="btn btn-outline-brown d-none" data-key="cancel">Cancel</button>
+      </div>
+      </div>
+
+      <form id="profileForm" class="row g-3 needs-validation" novalidate>
+        <div class="col-12 d-flex align-items-center gap-3">
+          <div id="avatarPreview" class="avatar" style="background-image: url('{{ user.avatar_url or '' }}');" aria-label="Profile photo preview"></div>
+          <div class="flex-grow-1">
+            <label class="form-label" data-key="photo">Profile Photo</label>
+            <input class="form-control" type="file" id="avatar" name="avatar" accept="image/png,image/jpeg,image/webp" disabled>
+            <div class="hint mt-1" data-key="hintPhoto">JPG/PNG/WebP • ~2MB max recommended</div>
+          </div>
+        </div>
+
+      <div class="col-md-6">
+          <label class="form-label" data-key="fname">First Name <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" name="firstName" data-key="inputfname" placeholder="First name" required
+            disabled value="{{ user.first_name or '' }}">
+          <div class="invalid-feedback" data-key="firstNamefb">Please enter your first name.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" data-key="lname">Last Name (optional)</label>
+          <input type="text" class="form-control" name="lastName" data-key="inputlname" placeholder="Last name" disabled
+            value="{{ user.last_name or '' }}">
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label" data-key="age">Age <span class="text-danger">*</span></label>
+          <input type="number" class="form-control" name="age" min="1" max="120" required disabled
+            value="{{ user.age or '' }}">
+          <div class="invalid-feedback" data-key="agefb">Please provide a valid age.</div>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label" data-key="gender">Gender (optional)</label>
+          <select class="form-control" name="gender" disabled>
+            <option value="" data-key="select" {% if not user.gender %}selected{% endif %}>Select</option>
+            <option value="male" data-key="male" {% if user.gender == 'male' %}selected{% endif %}>Male</option>
+            <option value="female" data-key="female" {% if user.gender == 'female' %}selected{% endif %}>Female</option>
+          </select>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label" data-key="email">Email <span class="text-danger">*</span></label>
+          <input type="email" class="form-control" name="email" placeholder="you@example.com" required disabled
+            value="{{ user.email or '' }}">
+          <div class="invalid-feedback" data-key="emailfb">Please provide a valid email.</div>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label" data-key="number">Contact Number <span class="text-danger">*</span></label>
+          <input type="tel" class="form-control" name="phone" placeholder="+9665XXXXXXXX"
+                 pattern="^\+?[0-9\s\-]{8,15}$" required disabled value="{{ user.phone_number or '' }}">
+          <div class="invalid-feedback" data-key="numberfb">Please enter a valid phone number.</div>
+        </div>
+
+        <div id="passwordBlock" class="col-12 d-none">
+          <div class="row g-3 align-items-end">
+            <div class="col-md-6">
+              <label class="form-label" data-key="password">Password <span class="text-danger">*</span></label>
+            <div class="input-group">
+              <input type="password" class="form-control" id="password" name="password" data-key="inputpassword"
+                placeholder="Enter password" minlength="8">
+                <button class="input-group-text" type="button" id="togglePw"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" data-key="confirm">Confirm Password <span class="text-danger">*</span></label>
+            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword"
+              data-key="inputconfirm" placeholder="Confirm password">
+            <div class="invalid-feedback" data-key="confirmfb">Passwords must match.</div>
+            </div>
+          </div>
+
+          <div class="hint mt-2" data-key="hintpassword">Use at least 8 characters, with letters, numbers, and symbols.
+          </div>
+
+          <div class="strength-wrap mt-2">
+            <div class="progress">
+              <div id="pwBar" class="progress-bar" style="width:0%"></div>
+            </div>
+            <div id="pwStrengthText" class="strength-text mt-1" data-key="strength">Strength: —</div>
+          </div>
+
+          <ul class="criteria" id="pwCriteria">
+            <li id="cLen"><span class="ci"></span><span data-key="s1">At least 8 characters</span></li>
+            <li id="cLower"><span class="ci"></span><span data-key="s2">Lowercase letter</span></li>
+            <li id="cUpper"><span class="ci"></span><span data-key="s3">Uppercase letter</span></li>
+            <li id="cDigit"><span class="ci"></span><span data-key="s4">Number</span></li>
+            <li id="cSymbol"><span class="ci"></span><span data-key="s5">Symbol (!@#$…)</span></li>
+          </ul>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+<script>
+    // ✅ دالة تسجيل الخروج الموحدة
+    function logout() {
+        localStorage.removeItem('token');
+        localStorage.removeItem('loggedIn');
+        const lang = localStorage.getItem('lang') || 'en';
+        alert(lang === 'ar' ? 'تم تسجيل الخروج بنجاح.' : 'Logged out successfully.');
+        window.location.href = "{{ url_for('index') }}";
+    }
+
+    const form = document.getElementById('profileForm');
+    const modeBadge = document.getElementById('modeBadge');
+    const editBtn = document.getElementById('editBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const passwordBlock = document.getElementById('passwordBlock');
+    const togglePw = document.getElementById('togglePw');
+
+    const avatarInput = document.getElementById('avatar');
+    const avatarPreview = document.getElementById('avatarPreview');
+
+    // Password UI refs
+    const pw = document.getElementById('password');
+    const cpw = document.getElementById('confirmPassword');
+    const pwBar = document.getElementById('pwBar');
+    const pwStrengthText = document.getElementById('pwStrengthText');
+    const cLen = document.getElementById('cLen');
+    const cLower = document.getElementById('cLower');
+    const cUpper = document.getElementById('cUpper');
+    const cDigit = document.getElementById('cDigit');
+    const cSymbol = document.getElementById('cSymbol');
+
+    // Helpers
+    function setDisabled(disabled){
+      form.querySelectorAll('input, select, textarea').forEach(el=>{
+        el.disabled = disabled;
+      });
+    }
+    function setViewMode(){
+      setDisabled(true);
+      passwordBlock.classList.add('d-none');
+      editBtn.classList.remove('d-none');
+      saveBtn.classList.add('d-none');
+      cancelBtn.classList.add('d-none');
+      const lang = document.documentElement.lang;
+      modeBadge.textContent = (lang === 'ar') ? 'وضع العرض' : 'View mode';
+    }
+    function setEditMode(){
+      setDisabled(false);
+      passwordBlock.classList.remove('d-none');
+      editBtn.classList.add('d-none');
+      saveBtn.classList.remove('d-none');
+      cancelBtn.classList.remove('d-none');
+      // تعطيل حقل الايميل لتجنب التغييرات غير المرغوبة
+      form.querySelector('input[name="email"]').disabled = true; 
+      const lang = document.documentElement.lang;
+      modeBadge.textContent = (lang === 'ar') ? 'وضع التعديل' : 'Edit mode';
+    }
+
+    function loadProfile(){
+        console.log("Profile data loaded from Jinja context.");
+    }
+    
+    // 💡 دالة حفظ الملف الشخصي المعدلة (لتتوافق مع كود Python)
+    async function saveProfile(){
+      // ⚠️ ملاحظة: يجب أن تتطابق المفاتيح هنا مع ما يتوقعه مسار تحديث الملف الشخصي في auth.py
+      const firstNameInput = form.querySelector('input[name="firstName"]').value;
+      const lastNameInput = form.querySelector('input[name="lastName"]').value;
+      const ageInput = form.querySelector('input[name="age"]').value;
+      const genderInput = form.querySelector('select[name="gender"]').value;
+      const phoneInput = form.querySelector('input[name="phone"]').value;
+      const passwordInput = document.getElementById('password')?.value; // قراءة كلمة المرور الجديدة إن وجدت
+
+      const data = {
+          // 💡 نستخدم أسماء الحقول بصيغة snake_case التي يتوقعها السيرفر
+          first_name: firstNameInput,
+          last_name: lastNameInput,
+          age: ageInput,
+          gender: genderInput,
+          phone_number: phoneInput
+      };
+      
+      // إضافة حقل كلمة المرور فقط إذا أدخل المستخدم قيمة جديدة
+      if (passwordInput) {
+          data.password = passwordInput;
+      }
+      
+      const token = localStorage.getItem('token');
+      const currentLang = document.documentElement.lang;
+      
+      if (!token) {
+           alert((currentLang === "ar") ? "انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى." : "Session expired. Please log in again.");
+           window.location.href = "{{ url_for('login') }}";
+           return;
+      }
+      
+      try {
+          // 💡 [التعديل 1]: تغيير المسار إلى /auth/update_profile لمطابقة كود Python
+          // 💡 [التعديل 2]: تغيير الميثود إلى POST لمطابقة كود Python
+          const response = await fetch('/auth/update_profile', { 
+              method: 'POST', 
+              headers: {
+                  'Content-Type': 'application/json',
+                  'x-auth-token': token // 🔑 مفتاح المصادقة
+              },
+              body: JSON.stringify(data)
+          });
+
+          const result = await response.json();
+          
+          if (response.ok) {
+              const successMessage = (currentLang === "ar") ? "تم حفظ بيانات الملف الشخصي بنجاح!" : "Profile data saved successfully!";
+              alert(successMessage);
+              // 💡 تحديث: نعيد تحميل الصفحة لعرض البيانات الجديدة من السيرفر
+              location.reload(); 
+          } else if (response.status === 401) {
+              alert((currentLang === "ar") ? "فشل المصادقة. يرجى تسجيل الدخول مجددًا." : "Authentication failed. Please log in again.");
+              window.location.href = "{{ url_for('login') }}";
+          } else {
+              const errorMessage = result.message || ((currentLang === "ar") ? "فشل حفظ البيانات. " : "Failed to save data. ");
+              alert(errorMessage);
+          }
+
+      } catch (error) {
+          console.error('Fetch error:', error);
+          const networkError = (currentLang === "ar") ? "فشل الاتصال بالخادم. حاول مرة أخرى." : "Failed to connect to server. Try again.";
+          alert(networkError);
+      }
+    }
+
+
+    // Avatar preview + store in profile on save
+    avatarInput.addEventListener('change', function(){
+      const file = this.files && this.files[0];
+      if (!file){ 
+        avatarPreview.style.backgroundImage=''; 
+        return; 
+      }
+      const reader = new FileReader();
+      reader.onload = e => { avatarPreview.style.backgroundImage = `url('${e.target.result}')`; };
+      reader.readAsDataURL(file);
+    });
+
+    // Toggle password visibility
+    if (togglePw) {
+      togglePw.addEventListener('click', ()=>{
+        if (!pw) return;
+        const show = pw.type === 'password';
+        pw.type = show ? 'text' : 'password';
+        togglePw.innerHTML = show ? '<i class="bi bi-eye-slash"></i>' : '<i class="bi bi-eye"></i>';
+      });
+    }
+
+    // Password strength + checklist
+    function setCriterion(el, ok){ el && el.classList.toggle('ok', ok); }
+    function strengthInfo(val){
+      const hasLen   = val.length >= 8;
+      const hasLower = /[a-z]/.test(val);
+      const hasUpper = /[A-Z]/.test(val);
+      const hasDigit = /\d/.test(val);
+      const hasSym   = /[^A-Za-z0-9]/.test(val);
+      const lang = document.documentElement.lang;
+
+      setCriterion(cLen,   hasLen);
+      setCriterion(cLower, hasLower);
+      setCriterion(cUpper, hasUpper);
+      setCriterion(cDigit, hasDigit);
+      setCriterion(cSymbol,hasSym);
+
+      const checks = [hasLen, hasLower, hasUpper, hasDigit, hasSym];
+      const score = checks.filter(Boolean).length;
+      const pct = [0,25,50,70,85,100][score];
+
+      let label = lang === 'ar' ? 'ضعيفة جدًا' : 'Very weak';
+      cls = 'bg-danger';
+      if (score === 2) { label = (lang === 'ar') ? 'ضعيفة' : 'Weak'; cls = 'bg-danger'; }
+      if (score === 3) { label = (lang === 'ar') ? 'متوسطة' : 'Fair'; cls = 'bg-warning'; }
+      if (score === 4) { label = (lang === 'ar') ? 'جيدة' : 'Good'; cls = 'bg-info'; }
+      if (score === 5) { label = (lang === 'ar') ? 'قوية' : 'Strong';  cls = 'bg-success'; }
+
+      pwBar.className = 'progress-bar ' + cls;
+      pwBar.style.width = pct + '%';
+      pwStrengthText.textContent = (lang == 'ar') ? ' قوة كلمة المرور: ' + label : 'Strength: ' + label;
+
+      const typesCount = [hasLower,hasUpper,hasDigit,hasSym].filter(Boolean).length;
+      return hasLen && typesCount >= 2;
+    }
+
+    function validatePwMatch(){
+      if (!pw || !cpw) return true;
+      if (!pw.value && !cpw.value) { cpw.setCustomValidity(''); return true; }
+      const ok = pw.value === cpw.value;
+      cpw.setCustomValidity(ok ? '' : 'Passwords do not match');
+      return ok;
+    }
+
+    pw && pw.addEventListener('input', ()=>{
+      const ok = strengthInfo(pw.value);
+      if (pw.value) pw.setCustomValidity(ok ? '' : 'Please improve password strength.');
+      else pw.setCustomValidity('');
+      validatePwMatch();
+    });
+    cpw && cpw.addEventListener('input', validatePwMatch);
+
+    // Buttons
+    editBtn.addEventListener('click', setEditMode);
+
+    saveBtn.addEventListener('click', async ()=>{
+      if (!form.checkValidity()){ form.classList.add('was-validated'); return; }
+      
+      let passwordValidationPassed = true;
+
+      // تحقق من كلمة المرور إذا تم إدخالها
+      if (pw && pw.value){
+        const strongEnough = strengthInfo(pw.value);
+        if (!strongEnough){ pw.reportValidity(); passwordValidationPassed = false; }
+        if (!validatePwMatch()){ cpw.reportValidity(); passwordValidationPassed = false; }
+      }
+      
+      if (!passwordValidationPassed) return;
+
+
+      // 1. تنفيذ وظيفة حفظ البيانات
+      await saveProfile(); 
+
+      // 2. العودة إلى وضع العرض (سيحدث تلقائياً عند إعادة تحميل الصفحة)
+      // يتم إعادة تعيين حقول كلمة المرور للتأكد من أنها فارغة عند الخروج من وضع التعديل
+      if (pw) pw.value = '';
+      if (cpw) cpw.value = '';
+      setViewMode();
+    });
+    
+    cancelBtn.addEventListener('click', ()=>{
+      location.reload(); 
+    });
+
+
+    /* Change the language */
+    const translations = {
+      ar: {
+        history: "السجل",          community: "المجتمع",     about: "عنا",
+        profile: "الملف الشخصي",  view: "وضع العرض",        edit: "تعديل",
+        save: "حفظ",               cancel: "إلغاء",          photo: "صورة الملف الشخصي",
+        hintPhoto: "JPG/PNG/WebP • الحد الأقصى الموصى به ~2MB",
+        fname: "الاسم الأول",       inputfname: "أدخل الاسم الأول",
+        firstNamefb: "الرجاء إدخال اسمك الأول.",                      lname: "اسم العائلة (اختياري)",
+        inputlname: "أدخل اسم العائلة",                      age: "العمر",
+        agefb: "يرجى إدخال عمر صحيح.",                      gender: "الجنس (اختياري)",
+        select: "اختر",           male: "ذكر",               female: "أنثى",
+        email: "البريد الإلكتروني",               emailfb: "يرجى إدخال بريد إلكتروني صحيح.",
+        number: "رقم الهاتف",                     numberfb: "يرجى إدخال رقم هاتف صحيح.",
+        password: "كلمة المرور",                  inputpassword: "أدخل كلمة المرور",
+        confirm: "تأكيد كلمة المرور",             inputconfirm: "أعد إدخال كلمة المرور",
+        confirmfb: "يجب أن تتطابق كلمات المرور.",
+        hintpassword: "استخدم 8 أحرف على الأقل، مع حروف وأرقام ورموز.",
+        strength: "قوة كلمة المرور: —",           s1: "8 أحرف على الأقل",
+        s2: "حروف صغيرة",                         s3: "حروف كبيرة",
+        s4: "رقم",                                s5: "رمز (!@#$…)",
+        logout: "تسجيل خروج",
+        login: "تسجيل الدخول"
+      },
+      en: {
+        history: "History",   community: "Community", about: "About",
+        profile: "Profile",   view: "View mode",      edit: "Edit",
+        save: "Save",         cancel: "Cancel",       photo: "Profile Photo",
+        hintPhoto: "JPG/PNG/WebP • ~2MB max recommended",
+        fname: "First Name",  inputfname: "First name",
+        firstNamefb: "Please enter your first name.",
+        lname: "Last Name (optional)",                inputlname: "Last name",
+        age: "Age",           agefb: "Please provide a valid age.",
+        gender: "Gender (optional",                   select: "Select",
+        male: "Male",         female: "Female",       email: "Email",
+        emailfb: "Please provide a valid email.",     number: "Phone Number",
+        numberfb: "Please enter a valid phone number.", password: "Password",
+        inputpassword: "Enter Password",              confirm: "Confirm Password",
+        inputconfirm: "Confirm password",             confirmfb: "Passwords must match.",
+        hintpassword: "Use at least 8 characters, with letters, numbers, and symbols.",
+        strength: "Strength: —",    s1: "At least 8 characters",
+        s2: "Lowercase letter",     s3: "Uppercase letter",
+        s4: "Number",               s5: "Symbol (!@#$…)",
+        logout: "Log Out",
+        login: "Log In"
+      }
+    };
+
+    function switchLang(lang) {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+      document.querySelectorAll("[data-key]").forEach(el => {
+      const span = el.querySelector('span');
+      const textKey = el.dataset.key;
+      const text = translations[lang][textKey];
+
+      //If there's icons, keep it
+      if (span) {
+        el.innerHTML = '';
+        el.appendChild(document.createTextNode(text+' '));
+        el.appendChild(span);
+
+      } else if (el.tagName === "INPUT" && el.type !== "file") { // ✅ استثناء input file
+          el.placeholder = text;
+
+      //If there's no icon
+      } else {
+        if (text) el.innerHTML = text; // ✅ إضافة شرط لـ text
+
+      }});
+    // يتم تحديث زر المصادقة بعد تحديث اللغة
+    updateAuthLink(lang);
+    localStorage.setItem("lang", lang);
+  }
+  
+    // ✅ دالة لتحديث رابط المصادقة (تسجيل دخول/تسجيل خروج)
+    function updateAuthLink(lang) {
+        const authLink = document.getElementById('authLink');
+        const profileLink = document.querySelector('.dropdown a[href="{{ url_for('profile') }}"]');
+        const isLoggedIn = localStorage.getItem('loggedIn') === 'true' && localStorage.getItem('token');
+        
+        if (!authLink) return;
+
+        if (isLoggedIn) {
+            authLink.textContent = translations[lang]['logout'];
+            authLink.setAttribute('onclick', 'logout()');
+            authLink.removeAttribute('href');
+            if (profileLink) profileLink.classList.add('active'); 
+        } else {
+            authLink.textContent = translations[lang]['login'];
+            authLink.setAttribute('href', '{{ url_for('login') }}');
+            authLink.removeAttribute('onclick');
+            if (profileLink) profileLink.classList.remove('active'); 
+        }
+    }
+
+    const savedLang = localStorage.getItem("lang") || "en";
+    
+    // Init + Auth Link Update
+    document.addEventListener('DOMContentLoaded', () => {
+        loadProfile();
+        setViewMode();
+        switchLang(savedLang); // تطبيق اللغة المحفوظة وتحديث حالة المصادقة
+        
+        // منطق إظهار/إخفاء القائمة المنسدلة
+        const profileToggle = document.querySelector('.profile-menu');
+        if (profileToggle) {
+            profileToggle.addEventListener('click', function (event) {
+                if (event.target.tagName !== 'A' || event.target.id === 'profileDropdownToggle') {
+                    event.preventDefault();
+                }
+                this.classList.toggle('active');
+            });
+
+            document.addEventListener('click', (event) => {
+                if (!profileToggle.contains(event.target)) {
+                    profileToggle.classList.remove('active');
+                }
+            });
+        }
+    });
+  </script>
+</body>
+
+ <footer class="site-footer">
+    <div class="container">
+      Dermalens. Copyright DERMALENS. All Rights Reserved
+    </div>
+  </footer>
+
+</html>

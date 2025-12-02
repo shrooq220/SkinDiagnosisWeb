@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='Main.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <title>DermaLens • About</title>
+
+    <style>
+        :root {
+            --brand-brown: #a18664;
+            /* Defining the brand brown color for highlighting */
+        }
+
+        /* 💡 Modification: Fixing the navigation bar to the top, making it always visible */
+        header {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background-color: #ffffff;
+            /* Adding a solid background color to cover the content underneath */
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+            /* Adding a shadow to distinguish it from the content */
+            z-index: 1000;
+            /* To ensure it appears above other elements */
+        }
+
+        /* 💡 Modification: Pushing the page content down to avoid overlapping with the fixed bar */
+        body {
+            padding-top: 70px;
+            /* Space equal to the height of the top bar */
+        }
+
+        /* Styling to unify the navigation bar and highlight the active page */
+        .navigation .navLinks li a:hover,
+        .navigation .navLinks li.active-page>a,
+        .navigation .navLinks li.profile-menu.active-page>a {
+            color: var(--brand-brown);
+            font-weight: 600;
+        }
+
+        /* Styling for the profile dropdown menu */
+        .profile-menu {
+            position: relative;
+        }
+
+        .profile-menu .dropdown {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 10px 0;
+            min-width: 180px;
+            z-index: 10;
+        }
+
+        .profile-menu.active .dropdown {
+            display: block;
+        }
+
+        .site-footer {
+            /* To fix its position relative to the viewport */
+            position: fixed;
+            /* Positioning it at the bottom */
+            bottom: 0;
+            /* Making it cover the full screen width */
+            width: 100%;
+            /* To ensure it appears above other elements (high value) */
+            z-index: 1000;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <nav class="navigation container">
+            <div class="logo">
+                <a href="{{ url_for('diagnosis') }}">DermaLens</a>
+            </div>
+
+            <ul class="navLinks">
+                <li><a href="{{ url_for('history') }}" data-key="history">History</a></li>
+                <li><a href="{{ url_for('community') }}" data-key="community">Community</a></li>
+                <li class="active-page"><a href="{{ url_for('about') }}" data-key="about">About</a></li>
+
+                <li class="profile-menu" id="profile-toggle">
+                    <a href="#" title="Account Menu" id="profileDropdownToggle"><i
+                            class="fa-solid fa-circle-user"></i></a>
+
+                    <div class="dropdown">
+                        <a href="#" id="profileLink" data-key="profile">Profile</a>
+
+                        <div class="separator"></div>
+
+                        <div class="lang-options">
+                            <a onclick="switchLang('ar')">عربي</a>
+                            <a onclick="switchLang('en')">English</a>
+                        </div>
+
+                        <div class="separator" id="authSeparator"></div>
+
+                        <a href="#" data-key="auth" id="authLink">Log Out</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+
+
+    <section class="about-hero">
+        <div class="container">
+            <div class="about-hero-overlay">
+                <h1 data-key="aboutDerma"><i class="fas fa-microscope"></i> About DermaLens</h1>
+                <p class="about-hero-subtitle" data-key="Aboutsub">Revolutionizing skin health through AI-powered
+                    diagnosis and community
+                    support</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="about-container">
+
+
+
+        <div class="about-section" id="first-section">
+            <h2 data-key="what"><i class="fas fa-lightbulb section-icon"></i> What is DermaLens?</h2>
+            <p style="color: #333333;" data-key="whatsub1">DermaLens is an innovative AI-powered platform designed to
+                help you understand
+                and monitor your skin health. Using advanced machine learning algorithms, we analyze skin conditions
+                through photo uploads, providing instant preliminary diagnosis and comprehensive information about
+                various dermatological conditions.</p>
+            <p style="color: #333333;" data-key="whatsub2">Our mission is to make dermatological knowledge accessible to
+                everyone,
+                empowering individuals to take proactive steps in their skin health journey while bridging the gap
+                between self-care and professional medical treatment.</p>
+        </div>
+
+        <div class="about-section">
+            <h2 data-key="howworks"><i class="fas fa-cogs section-icon"></i> How It Works</h2>
+            <div class="how-it-works">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3 data-key="how1">Upload Photo</h3>
+                    <p style="color: #333333;" data-key="howsub1">Take or upload a clear photo of your skin condition
+                        using your camera or
+                        from your galary</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3 data-key="how2">AI Analysis</h3>
+                    <p style="color: #333333;" data-key="howsub2">Our advanced AI algorithms analyze your image using
+                        thousands of medical
+                        references</p>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3 data-key="how3">Get Results</h3>
+                    <p style="color: #333333;" data-key="howsub3">Receive detailed information about your skin
+                        condition, symptoms, and
+                        where it appears</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-number" data-target="91">0</div>
+                <p style="color: #333333;" data-key="Accuracy">Accuracy Rate</p>
+            </div>
+            <div class="stat">
+                <div class="stat-number" data-target="1000+">0</div>
+                <p style="color: #333333;" data-key="Users">Users Helped</p>
+            </div>
+            <div class="stat">
+                <div class="stat-number" data-target="5">0</div>
+                <p style="color: #333333;" data-key="Skin">Skin Conditions</p>
+            </div>
+            <div class="stat">
+                <div class="stat-number" data-target="24">0</div>
+                <p style="color: #333333;" data-key="Support">Hours Support</p>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h2 data-key="Features"><i class="fas fa-star section-icon"></i> Key Features</h2>
+            <div class="features-grid">
+                <div class="feature">
+                    <i class="fas fa-camera feature-icon"></i>
+                    <div>
+                        <h4 data-key="f1">Instant AI Diagnosis</h4>
+                        <p style="color: #333333;" data-key="fsub1">Get immediate analysis results</p>
+                    </div>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-info-circle feature-icon"></i>
+                    <div>
+                        <h4 data-key="f2">Detailed Information</h4>
+                        <p style="color: #333333;" data-key="fsub2">Comprehensive condition details</p>
+                    </div>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-map-marked-alt feature-icon"></i>
+                    <div>
+                        <h4 data-key="f3">Body Location Guide</h4>
+                        <p style="color: #333333;" data-key="fsub3">Where conditions typically appear</p>
+                    </div>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-history feature-icon"></i>
+                    <div>
+                        <h4 data-key="f4">History Tracking</h4>
+                        <p style="color: #333333;" data-key="fsub4">Monitor your skin health over time</p>
+                    </div>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-users feature-icon"></i>
+                    <div>
+                        <h4 data-key="f5">Community Support</h4>
+                        <p style="color: #333333;" data-key="fsub5">Connect with others and share experiences</p>
+                    </div>
+                </div>
+                <div class="feature">
+                    <i class="fas fa-shield-alt feature-icon"></i>
+                    <div>
+                        <h4 data-key="f6">Privacy Protected</h4>
+                        <p style="color: #333333;" data-key="fsub6">Your data is secure and confidential</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="disclaimer">
+            <h2 data-key="disclaimer"><i class="fas fa-exclamation-triangle"></i> Important Disclaimer</h2>
+            <p data-key="disclaimersub"><strong data-key="disclaimersubstrong">DermaLens is not a replacement for
+                    professional medical advice.</strong>
+                Our AI provides
+                preliminary analysis for educational purposes only. Always consult with a qualified dermatologist or
+                healthcare provider for proper diagnosis and treatment of skin conditions. If you have serious concerns
+                about your skin health, please seek immediate medical attention.</p>
+        </div>
+
+        <div class="about-section">
+            <h2 data-key="team"><i class="fas fa-users section-icon"></i> Our Team</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <div class="team-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h4 data-key="nada">Nada Osamah Oraijah</h4>
+                    <p style="color: #333333;" data-key="CS">Computer science</p>
+                    <small data-key="KAU">King Abdullaziz University</small>
+                </div>
+                <div class="team-member">
+                    <div class="team-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h4 data-key="wed">Wed Mohammed Aljahdali</h4>
+                    <p style="color: #333333;" data-key="CS">Computer science</p>
+                    <small data-key="KAU">King Abdullaziz University</small>
+                </div>
+                <div class="team-member">
+                    <div class="team-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h4 data-key="refal">Refal Talal Alrhily</h4>
+                    <p style="color: #333333;" data-key="CS">Computer science</p>
+                    <small data-key="KAU">King Abdullaziz University</small>
+                </div>
+                <div class="team-member">
+                    <div class="team-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <h4 data-key="shrooq">Shrooq Abdu Kaabi</h4>
+                    <p style="color: #333333;" data-key="CS">Computer science</p>
+                    <small data-key="KAU">King Abdullaziz University</small>
+                </div>
+            </div>
+
+            <div class="supervisor-section">
+                <div class="supervisor-card">
+                    <div class="supervisor-avatar">
+                        <i class="fas fa-user"></i>
+                    </div>
+                    <div class="supervisor-info">
+                        <h3 data-key="nihal">Dr. Nihal Abuzinadah</h3>
+                        <p data-key="supervisor">Project Supervisor</p>
+                        <p data-key="CSKAU">Computer science/King Abdullaziz University</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="site-footer">
+        <div class="container">Dermalens. Copyright DERMALENS. All Rights Reserved</div>
+    </footer>
+
+    <script>
+        // ✅ دالة تسجيل الخروج الموحدة والموجهة لصفحة تسجيل الدخول
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('loggedIn');
+            const lang = localStorage.getItem('lang') || 'en';
+            alert(lang === 'ar' ? 'تم تسجيل الخروج بنجاح.' : 'Logged out successfully.');
+            window.location.href = "{{ url_for('login') }}"; // التوجيه إلى صفحة تسجيل الدخول
+        }
+
+        /* To change the language */
+        const translations = {
+            ar: {
+                history: "السجل",
+                community: "المجتمع",
+                about: "عنا",
+                profile: "الملف الشخصي", // ✅ Added for dynamic header
+                login: "تسجيل الدخول", // ✅ Added for dynamic header
+                logout: "تسجيل خروج", // ✅ Added for dynamic header
+                aboutDerma: "عن ديرما لينس",
+                Aboutsub: "نحدث ثورة في صحة البشرة عبر التشخيص المدعوم بالذكاء الاصطناعي ودعم المجتمع.",
+                what: "ما هو ديرما لينس؟",
+                whatsub1: "ديرما لينس منصة مبتكرة مدعومة بالذكاء الاصطناعي، صُممت لمساعدتك على فهم ومتابعة صحة بشرتك." +
+                    " نعتمد على خوارزميات متقدمة للتعلّم الآلي لتحليل مشاكل البشرة من خلال رفع الصور، ونوفر تشخيصًا مبدئيًا" +
+                    " فوريًا إلى جانب معلومات شاملة عن مختلف الحالات الجلدية.",
+                whatsub2: "مهمتنا هي جعل المعرفة الجلدية في متناول الجميع، وتمكين الأفراد من اتخاذ خطوات استباقية في رحلة العناية" +
+                    " ببشرتهم، مع سد الفجوة بين الرعاية الذاتية والعلاج الطبي المتخصص.",
+                howworks: "كيف يعمل؟",
+                how1: "رفع الصورة",
+                howsub1: "التقط أو حمّل صورة واضحة لحالة بشرتك باستخدام الكاميرا أو من معرض الصور.",
+                how2: "تحليل بالذكاء الاصطناعي",
+                howsub2: "خوارزمياتنا المتقدمة تحلل صورتك بالاعتماد على آلاف المراجع الطبية.",
+                how3: "استلام النتائج",
+                howsub3: "ستحصل على معلومات مفصلة عن حالتك الجلدية، الأعراض، والمناطق التي قد تظهر فيها.",
+                Accuracy: "معدل الدقة", Users: "مستخدم تمت مساعدتهم",
+                Skin: "حالات جلدية", Support: "ساعة دعم",
+                Features: "الميزات الرئيسية",
+                f1: "التشخيص الفوري بالذكاء الاصطناعي", fsub1: "احصل على نتائج التحليل فورًا",
+                f2: "معلومات تفصيلية", fsub2: "تفاصيل شاملة عن الحالة",
+                f3: "دليل مواقع الجسم", fsub3: "المناطق التي تظهر فيها الحالات عادةً",
+                f4: "متابعة التاريخ الصحي للبشرة", fsub4: "راقب صحة بشرتك مع مرور الوقت",
+                f5: "دعم المجتمع", fsub5: "تواصل مع الآخرين وشارك تجاربك",
+                f6: "حماية الخصوصية",
+                fsub6: "بياناتك آمنة وسرية",
+                disclaimer: "تنويه مهم",
+                disclaimersubstrong: "ديرما لينس ليس بديلًا عن الاستشارة الطبية المتخصصة.",
+                disclaimersub: "الذكاء الاصطناعي لدينا يقدم تحليلًا مبدئيًا لأغراض تعليمية فقط. يُنصح دائمًا بمراجعة طبيب جلدية مؤهل " +
+                    "أو مقدم رعاية صحية للحصول على تشخيص وعلاج مناسب للحالات الجلدية. إذا كانت لديك مخاوف جدية " +
+                    "بشأن صحة بشرتك، يرجى طلب الرعاية الطبية الفورية.",
+                team: "فريقنا", nada: "ندى أسامة عريجه",
+                wed: "ود محمد الجحدلي", refal: "ريفال طلال الرحيلي",
+                shrooq: "شروق عبده كعبي", CS: "علوم الحاسب",
+                KAU: "جامعة الملك عبدالعزيز", nihal: "د. نهال أبو زنادة",
+                supervisor: "مشرفة المشروع", CSKAU: "علوم الحاسب / جامعة الملك عبدالعزيز"
+            },
+            en: {
+                history: "History",
+                community: "Community",
+                about: "About",
+                profile: "Profile", // ✅ Added for dynamic header
+                login: "Log In", // ✅ Added for dynamic header
+                logout: "Log Out", // ✅ Added for dynamic header
+                aboutDerma: "About DermaLens",
+                Aboutsub: "Revolutionizing skin health through AI-powered diagnosis and community support",
+                what: "What is DermaLens?",
+                whatsub1: "DermaLens is an innovative AI-powered platform designed to help you understand and" +
+                    " monitor your skin health. Using advanced machine learning algorithms, we analyze skin conditions" +
+                    " through photo uploads, providing instant preliminary diagnosis and comprehensive information about" +
+                    " various dermatological conditions.",
+                whatsub2: "Our mission is to make dermatological knowledge accessible to everyone, empowering" +
+                    " individuals to take proactive steps in their skin health journey while bridging the gap between" +
+                    " self-care and professional medical treatment.",
+                howworks: "How It Works",
+                how1: "Upload Photo",
+                howsub1: "Take or upload a clear photo of your skin condition using your camera or from your gallary",
+                how2: "AI Analysis",
+                howsub2: "Our advanced AI algorithms analyze your image using thousands of medical references",
+                how3: "Get Results",
+                howsub3: "Receive detailed information about your skin condition, symptoms, and where it appears",
+                Accuracy: "Accuracy Rate", Users: "Users Helped",
+                Skin: "Skin Conditions", Support: "Hours Support",
+                Features: "Key Features",
+                f1: "Instant AI Diagnosis", fsub1: "Get immediate analysis results",
+                f2: "Detailed Information", fsub2: "Comprehensive condition details",
+                f3: "Body Location Guide", fsub3: "Where conditions typically appear",
+                f4: "History Tracking", fsub4: "Monitor your skin health over time",
+                f5: "Community Support", fsub5: "Connect with others and share experiences",
+                f6: "Privacy Protected", fsub6: "Your data is secure and confidential",
+                disclaimer: "Important Disclaimer", disclaimersubstrong: "DermaLens is not a replacement for professional medical advice.",
+                disclaimersub: "Our AI provides preliminary analysis for educational purposes only. Always consult with a" +
+                    "qualified dermatologist or healthcare provider for proper diagnosis and treatment of skin conditions." +
+                    " If you have serious concerns about your skin health, please seek immediate medical attention.",
+                team: "Our Team", nada: "Nada Osamah Oraijah", wed: "Wed Mohammed Aljahdali",
+                refal: "Refal Talal Alrhily", shrooq: "Shrooq Abdu Kaabi",
+                CS: "Computer science", KAU: "King Abdullaziz University ",
+                nihal: "Dr. Nihal Abuzinadah",
+                supervisor: "Project Supervisor",
+                CSKAU: "Computer science/King Abdullaziz University"
+            }
+        };
+
+        // ✅ دالة لتحديث رابط المصادقة (تسجيل دخول/تسجيل خروج)
+        function updateAuthLink(lang) {
+            const authLink = document.getElementById('authLink');
+            const isLoggedIn = localStorage.getItem('loggedIn') === 'true' && localStorage.getItem('token');
+
+            if (!authLink) return;
+
+            if (isLoggedIn) {
+                authLink.textContent = translations[lang]['logout'];
+                authLink.setAttribute('onclick', 'logout()');
+                authLink.removeAttribute('href');
+            } else {
+                authLink.textContent = translations[lang]['login'];
+                authLink.setAttribute('href', '{{ url_for('login') }}');
+                authLink.removeAttribute('onclick');
+            }
+        }
+
+        function switchLang(lang) {
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+            document.querySelectorAll("[data-key]").forEach(el => {
+                const icon = el.querySelector('i');
+                const strong = el.querySelector('strong');
+                const text = translations[lang][el.dataset.key];
+
+                if (el.dataset.key === 'auth') return; // Skip auth link, handled by updateAuthLink
+
+                //If there's icons, keep it
+                if (icon) {
+                    el.innerHTML = '';
+                    el.appendChild(icon);
+                    el.appendChild(document.createTextNode(' ' + text));
+
+                    //If there's no icon
+                } else if (strong) {
+                    el.innerHTML = '';
+                    el.appendChild(strong);
+                    el.appendChild(document.createTextNode(' ' + text));
+                } else {
+                    el.textContent = text;
+                }
+            });
+
+            // يتم تحديث زر المصادقة بعد تحديث اللغة
+            updateAuthLink(lang);
+
+            // save the chosen lang in localStorage
+            localStorage.setItem("lang", lang);
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // Apply saved language and initialize auth link
+            const savedLang = localStorage.getItem("lang") || "en";
+            switchLang(savedLang);
+
+            // Animated counter for statistics
+            function animateCounter(element, target) {
+                let current = 0;
+                const increment = target / 100;
+                const timer = setInterval(() => {
+                    current += increment;
+                    let displayValue = Math.floor(current);
+
+                    if (current >= target) {
+                        current = target;
+                        clearInterval(timer);
+                        // Handle the '+' for 1000+
+                        displayValue = target > 1000 ? '1000+' : (target === 91 ? '91' : String(target));
+                    }
+                    // Special handling for the target that includes '+'
+                    element.textContent = target === 1000 ? (displayValue >= 1000 ? '1000+' : displayValue) : displayValue;
+                    if (target === 91 && current >= 91) element.textContent = '91';
+                }, 20);
+            }
+
+            // Intersection Observer for counters
+            const observerOptions = {
+                threshold: 0.5
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting && !entry.target.dataset.animated) {
+                        // Target value can be '91' or '1000+' or '5' or '24'
+                        const targetText = entry.target.dataset.target;
+                        let targetValue;
+                        if (targetText.endsWith('+')) {
+                            targetValue = parseInt(targetText.slice(0, -1)); // Use 1000 for the animation base
+                        } else {
+                            targetValue = parseInt(targetText);
+                        }
+                        
+                        // We use the full target text for the animation function
+                        animateCounter(entry.target, targetValue);
+                        entry.target.dataset.animated = 'true';
+                    }
+                });
+            }, observerOptions);
+
+            // Observe all stat numbers
+            document.querySelectorAll('.stat-number').forEach(stat => {
+                observer.observe(stat);
+            });
+
+            // Scroll animations
+            const fadeInElements = document.querySelectorAll('.about-section, .step, .team-member, .stat, .disclaimer');
+
+            const fadeObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.opacity = '1';
+                        entry.target.style.transform = 'translateY(0)';
+                    }
+                });
+            }, { threshold: 0.1 });
+
+            fadeInElements.forEach(element => {
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(20px)';
+                element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                fadeObserver.observe(element);
+            });
+
+
+            // 🌟 منطق القائمة المنسدلة والملف الشخصي الموحد
+            const profileToggle = document.getElementById('profile-toggle');
+            const profileLink = document.getElementById('profileLink');
+
+            // ✅ إضافة منطق حماية التوجيه لصفحة الملف الشخصي
+            if (profileLink) {
+                profileLink.addEventListener('click', function (event) {
+                    const isLoggedIn = localStorage.getItem('loggedIn') === 'true' && localStorage.getItem('token');
+                    const currentLang = localStorage.getItem('lang') || 'en';
+
+                    if (!isLoggedIn) {
+                        event.preventDefault(); // منع التوجيه الافتراضي
+                        alert(currentLang === 'ar' ? "يجب تسجيل الدخول لعرض الملف الشخصي." : "You must log in to view the profile.");
+                        window.location.href = "{{ url_for('login') }}"; // التوجيه لصفحة تسجيل الدخول
+                    } else {
+                        window.location.href = "{{ url_for('profile') }}";
+                    }
+                    if (profileToggle) profileToggle.classList.remove('active');
+                });
+            }
+
+
+            if (profileToggle) {
+                profileToggle.addEventListener('click', function (event) {
+                    // منع التنقل إذا تم النقر على أيقونة القائمة الرئيسية
+                    if (event.target.tagName !== 'A' || event.target.id === 'profileDropdownToggle') {
+                        event.preventDefault();
+                    }
+                    this.classList.toggle('active');
+                });
+
+                // إغلاق القائمة عند النقر خارجها
+                document.addEventListener('click', (event) => {
+                    if (!profileToggle.contains(event.target)) {
+                        profileToggle.classList.remove('active');
+                    }
+                });
+            }
+        });
+
+    </script>
+</body>
+
+</html>

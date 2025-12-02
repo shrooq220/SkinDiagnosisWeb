@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='Main.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+  <title>DermaLens • History</title>
+</head>
+<style>
+ /* Modal styles for error message (from first template) */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border: none;
+      border-radius: 10px;
+      width: 80%;
+      max-width: 400px;
+      position: relative;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .close-btn {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      color: #aaa;
+      font-size: 24px;
+      font-weight: bold;
+      cursor: pointer;
+      background: none;
+      border: none;
+    }
+
+    .close-btn:hover {
+      color: #000;
+    }
+
+    .modal-message {
+      text-align: center;
+      font-size: 16px;
+      color: #333;
+      margin-top: 10px;
+      padding: 10px;
+    }
+
+    .modal-message p {
+      margin: 0;
+      line-height: 1.5;
+      font-weight: 500;
+    }
+
+    /* Loading animation (from first template) */
+    .loading {
+      display: none;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #3498db;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 10px;
+    }
+
+    @keyframes spin {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .start-analysis-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    /* Footer styles - using fixed position from your previous code */
+    .site-footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      z-index: 1000;
+    }
+
+    /* Styles for profile menu visibility (missing from your current style block) */
+    .profile-menu .dropdown {
+        display: none;
+    }
+    .profile-menu.active .dropdown {
+        display: block;
+    }
+  </style>
+
+<body>
+  <header>
+    <nav class="navigation">
+      <div class="logo">
+        <a href="{{ url_for('diagnosis') }}">DermaLens</a>
+      </div>
+
+      <ul class="navLinks">
+        <li><a href="{{ url_for('history') }}" data-key="history">History</a></li>
+        <li><a href="{{ url_for('community') }}" data-key="community">Community</a></li>
+        <li><a href="{{ url_for('about') }}" data-key="about">About</a></li>
+
+        <li class="profile-menu" id="profile-toggle">
+          <a href="#" id="profileDropdownToggle" title="Account Menu"><i class="fa-solid fa-circle-user"></i></a>
+
+          <div class="dropdown" id="profileDropdown">
+            <a href="#" id="profileLink" data-key="profile">Profile</a>
+
+            <div class="separator"></div>
+
+            <div class="lang-options">
+              <a onclick="switchLang('ar')">عربي</a>
+              <a onclick="switchLang('en')">English</a>
+            </div>
+
+            <div class="separator" id="authSeparator"></div>
+
+            <a href="#" data-key="auth" id="authLink">Log In</a>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <div class="container main-content" style="padding: 20px;">
+    <h1 data-key="pageTitle">Your Diagnosis History</h1>
+    <p data-key="pageSubtitle">Review your previous AI analysis records.</p>
+
+    <ul id="history-list" class="history-grid" style="list-style:none; padding-left:0; margin:0;">
+      <p data-key="loading">Loading history...</p>
+    </ul>
+  </div>
+
+  <script>
+    /* ===============================
+       Translations
+    =============================== */
+    const translations = {
+      ar: {
+        history: "السجل",
+        community: "المجتمع",
+        about: "عنا",
+        profile: "الملف الشخصي",
+        login: "تسجيل الدخول",
+        logout: "تسجيل خروج",
+        pageTitle: "سجل التشخيص الخاص بك",
+        pageSubtitle: "راجع سجلات تحليلات الذكاء الاصطناعي السابقة.",
+        noRecords: "لا يوجد سجلات تشخيص لعرضها.",
+        loading: "يتم تحميل السجل...",
+        confidence: "الثقة:",
+        loginRequired: "يجب تسجيل الدخول لعرض السجل.",
+        fetchError: "حدث خطأ أثناء جلب السجل.",
+        // أسماء الأمراض
+        melanoma: "ميلانوما",
+        lupus: "ذئبة",
+        ringworm: "سعفة/فطار جلدي",
+        eczema: "إكزيما",
+        acne: "حب شباب"
+      },
+      en: {
+        history: "History",
+        community: "Community",
+        about: "About",
+        profile: "Profile",
+        login: "Log In",
+        logout: "Log Out",
+        pageTitle: "Your Diagnosis History",
+        pageSubtitle: "Review your previous AI analysis records.",
+        noRecords: "No diagnosis records to display.",
+        loading: "Loading history...",
+        confidence: "Confidence:",
+        loginRequired: "You must be logged in to view history.",
+        fetchError: "An error occurred while fetching history.",
+        // أسماء الأمراض
+        melanoma: "Melanoma",
+        lupus: "Lupus",
+        ringworm: "Ringworm",
+        eczema: "Eczema",
+        acne: "Acne"
+      }
+    };
+
+    /* ===============================
+       Auth helpers (Front-end)
+    =============================== */
+    function logout() {
+      localStorage.removeItem('token');
+      localStorage.removeItem('loggedIn');
+      window.location.href = "{{ url_for('logout') }}";
+    }
+
+    function updateAuthLink(lang) {
+      const authLink = document.getElementById('authLink');
+      const hasToken = localStorage.getItem('loggedIn') === 'true' && localStorage.getItem('token');
+
+      if (!authLink) return;
+
+      if (hasToken) {
+        authLink.textContent = translations[lang]['logout'];
+        authLink.removeAttribute('href');
+        authLink.onclick = logout;
+      } else {
+        authLink.textContent = translations[lang]['login'];
+        authLink.setAttribute('href', "{{ url_for('login') }}");
+        authLink.onclick = null;
+      }
+    }
+
+    /* ===============================
+       Language switcher
+    =============================== */
+    function switchLang(lang) {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+      document.querySelectorAll("[data-key]").forEach(el => {
+        const key = el.dataset.key;
+        const text = translations[lang][key];
+
+        // خاصية الثقة: حافظي على <strong>
+        if (el.tagName === "P" && el.classList.contains("record-confidence")) {
+          const strong = el.querySelector('strong');
+          el.innerHTML = translations[lang]['confidence'] + ' ';
+          if (strong) el.appendChild(strong);
+          return;
+        }
+
+        // روابط تحتوي أيقونة
+        const icon = el.querySelector && el.querySelector('i');
+        if (icon) {
+          el.innerHTML = '';
+          el.appendChild(icon);
+          el.appendChild(document.createTextNode(' ' + (text || el.textContent)));
+        } else if (text) {
+          el.textContent = text;
+        }
+      });
+
+      localStorage.setItem("lang", lang);
+      updateAuthLink(lang);
+      fetchHistory(lang);
+    }
+
+    const savedLang = localStorage.getItem("lang") || "en";
+
+    /* ===============================
+       Fetch history from API
+    =============================== */
+    async function fetchHistory(currentLang) {
+      const historyList = document.getElementById('history-list');
+      const token = localStorage.getItem('token');
+
+      // Loading
+      historyList.innerHTML = `<p data-key="loading">${translations[currentLang].loading}</p>`;
+
+      if (!token) {
+        // تحويل فوري للّوجن (حماية واجهة إضافية)
+        alert(currentLang === 'ar' ? translations.ar.loginRequired : translations.en.loginRequired);
+        window.location.href = "{{ url_for('login') }}";
+        return;
+      }
+
+      try {
+        const response = await fetch('{{ url_for("api_history") }}', {
+          method: 'GET',
+          headers: { 'x-auth-token': token }
+        });
+
+        const data = await response.json();
+
+        historyList.innerHTML = ''; // امسحي الموجود
+
+        if (response.ok && data.success) {
+          if (!data.history || data.history.length === 0) {
+            historyList.innerHTML = `<p class="no-records-message">${translations[currentLang].noRecords}</p>`;
+            return;
+          }
+
+          // خريطة أسماء الأمراض للترجمة
+          const diagnosisKeyMap = {
+            "Acne and Rosacea Photos": "acne",
+            "Eczema Photos": "eczema",
+            "Lupus and other Connective Tissue diseases": "lupus",
+            "Melanoma Skin Cancer Nevi and Moles": "melanoma",
+            "Tinea/Ringworm ": "ringworm",
+            "Tinea Ringworm Candidiasis and other Fungal Infections": "ringworm"
+          };
+
+          data.history.forEach(record => {
+            const key = diagnosisKeyMap[record.diagnosis_name] || (record.diagnosis_name || '').toLowerCase();
+            const diagnosisName = translations[currentLang][key] || record.diagnosis_name || '—';
+
+            // إزالة 0 المبدئي في الثقة مثل 0.87 -> .87 (اختياري)
+            const confidenceRaw = (record.confidence || '').toString();
+            const confidenceText = confidenceRaw.startsWith('0') ? confidenceRaw.substring(1) : confidenceRaw;
+
+            // تنسيق التاريخ
+            const dateOptions = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+            const formattedDate = new Date(record.date).toLocaleDateString(
+              currentLang === 'ar' ? 'ar-EG' : 'en-US', dateOptions
+            );
+
+            const li = document.createElement('li');
+            li.style.listStyle = 'none';
+            li.innerHTML = `
+              <a href="${record.details_url}" class="record-link" style="display:flex; gap:14px; align-items:center; text-decoration:none;">
+                <div class="image-wrapper" style="width:96px; height:96px; overflow:hidden; border-radius:10px; border:1px solid #ddd; flex:0 0 96px;">
+                  <img src="${record.image_url}" alt="${diagnosisName}" class="record-image" style="width:100%; height:100%; object-fit:cover;" />
+                </div>
+                <div class="record-details" style="color:#333;">
+                  <h3 style="margin:0 0 4px 0; font-size:1rem;">${diagnosisName}</h3>
+                  <p class="record-date" style="margin:0 0 6px 0; color:#666; font-size:.9rem;">${formattedDate}</p>
+                  <p class="record-confidence" data-key="confidence" style="margin:0; color:#333;">
+                    ${translations[currentLang]['confidence']} <strong>${confidenceText}</strong>
+                  </p>
+                </div>
+              </a>
+            `;
+            historyList.appendChild(li);
+          });
+
+        } else {
+          historyList.innerHTML = `<p class="error-message">${data.error || translations[currentLang].fetchError}</p>`;
+          console.error("API Error:", data.error || data);
+        }
+
+      } catch (err) {
+        console.error("Network/Unexpected Error:", err);
+        historyList.innerHTML = `<p class="error-message">${translations[currentLang].fetchError}</p>`;
+      }
+    }
+
+    /* ===============================
+       Profile menu interactions
+    =============================== */
+    document.addEventListener('DOMContentLoaded', () => {
+      const currentLang = savedLang;
+
+      // طبّقي اللغة (هذا يستدعي updateAuthLink + fetchHistory داخليًا)
+      switchLang(currentLang);
+
+      // منطق قائمة الملف الشخصي
+      const profileToggle = document.getElementById('profile-toggle');
+      const profileLink = document.getElementById('profileLink');
+
+      if (profileToggle) {
+        profileToggle.addEventListener('click', (e) => {
+          // افتحي/أغلقي القائمة فقط عند النقر على الأيقونة أو الحاوية
+          if (e.target.tagName !== 'A' || e.target.id === 'profileDropdownToggle') {
+            e.preventDefault();
+          }
+          profileToggle.classList.toggle('active');
+        });
+
+        document.addEventListener('click', (e) => {
+          if (!profileToggle.contains(e.target)) {
+            profileToggle.classList.remove('active');
+          }
+        });
+      }
+
+      // حماية الانتقال للملف الشخصي من الواجهة
+      if (profileLink) {
+        profileLink.addEventListener('click', (e) => {
+          const hasToken = localStorage.getItem('loggedIn') === 'true' && localStorage.getItem('token');
+          if (!hasToken) {
+            e.preventDefault();
+            alert(currentLang === 'ar' ? "يجب تسجيل الدخول لعرض الملف الشخصي." : "You must be logged in to view the profile.");
+            window.location.href = "{{ url_for('login') }}";
+          } else {
+            // إذا مسجل دخول، وجّهي لمسار محمي من السيرفر
+            window.location.href = "{{ url_for('profile') }}";
+          }
+          // إغلاق القائمة
+          document.getElementById('profile-toggle')?.classList.remove('active');
+        });
+      }
+    });
+  </script>
+</body>
+
+ <footer class="site-footer">
+    <div class="container">
+      Dermalens. Copyright DERMALENS. All Rights Reserved
+    </div>
+  </footer>
+
+</html>
+

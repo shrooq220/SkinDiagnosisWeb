@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="{{ url_for('static', filename='Main.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+  <title>DermaLens • Diagnosis</title>
+
+  <style>
+      :root{
+          --brand-brown:#a18664; /* تعريف اللون البني الخاص بالتأشير */
+      }
+      /* تنسيق لتوحيد شريط التنقل وتمييز الصفحة النشطة */
+      .navigation .navLinks li a:hover,
+      .navigation .navLinks li.active-page > a,
+      .navigation .navLinks li.profile-menu.active-page > a {
+          color: var(--brand-brown); 
+          font-weight: 600;
+      }
+
+      /* تنسيق لإظهار القائمة المنسدلة للملف الشخصي */
+      .profile-menu .dropdown {
+          display: none;
+      }
+      .profile-menu.active .dropdown {
+          display: block;
+      }
+
+
+    /* Footer styles - using fixed position from your previous code */
+    .site-footer {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      z-index: 1000;
+    }
+
+    /* Styles for profile menu visibility (missing from your current style block) */
+    .profile-menu .dropdown {
+        display: none;
+    }
+    .profile-menu.active .dropdown {
+        display: block;
+    }
+
+
+
+  </style>
+</head>
+
+<body>
+  <div id="diagnosis-hw" class="header-wrapper">
+   <header>
+        <nav class="navigation container">
+            <div class="logo">
+                <a href="{{ url_for('diagnosis') }}">DermaLens</a>
+            </div>
+
+            <ul class="navLinks">
+                <li><a href="{{ url_for('history') }}" data-key="history">History</a></li>
+                <li><a href="{{ url_for('community') }}" data-key="community">Community</a></li>
+                <li><a href="{{ url_for('about') }}" data-key="about">About</a></li>
+
+                <li class="profile-menu" id="profile-toggle">
+                    <a href="#" title="Account Menu" id="profileDropdownToggle"><i class="fa-solid fa-circle-user"></i></a>
+                    
+                    <div class="dropdown">
+                        <a href="{{ url_for('profile') }}" data-key="profile">Profile</a>
+                        
+                        <div class="separator"></div>
+
+                        <div class="lang-options">
+                            <a onclick="switchLang('ar')">عربي</a>
+                            <a onclick="switchLang('en')">English</a>
+                        </div>
+                        
+                        <div class="separator"></div>
+                        
+                        <a href="#" onclick="logout()" data-key="logout" id="authLink">Log Out</a>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <section class="hero">
+      <p data-key="diagnosis">Start Diagnosis</p>
+      <button class="photo-btn" id="startDiagnosisBtn" data-key="uplaod">Upload Photo</button>
+    </section>
+
+  </div>
+
+ 
+
+   <footer class="site-footer">
+    <div class="container">
+      Dermalens. Copyright DERMALENS. All Rights Reserved
+    </div>
+  </footer>
+
+
+
+  <script>
+    document.getElementById("startDiagnosisBtn").addEventListener("click", () => {
+      const isLoggedIn = localStorage.getItem("loggedIn") === "true";
+      if (isLoggedIn) {
+        // التعديل: التوجيه إلى مسار 'predict' أو مسار تحليل الصور، بناءً على app.py
+        window.location.href = "{{ url_for('analysis') }}"; 
+      } else {
+        if (document.documentElement.lang === "ar") {
+          alert("يجب تسجيل الدخول قبل البدء في التشخيص.");
+        } else {
+          alert("You must log in before starting a diagnosis.");
+        }
+
+        // التعديل: التوجيه إلى صفحة تسجيل الدخول (المسار '/' index)
+        window.location.href = "{{ url_for('index') }}";
+      }
+    });
+
+
+    /* To change the language */
+    const translations = {
+      ar: {
+        history: "السجل",
+        community: "المجتمع",
+        about: "عنا",
+        logout: "تسحيل خروج",
+        diagnosis: "إبدأ التشخيص",
+        uplaod: "ارفع الصورة",
+        viewhistory: "أو استعرض سجلاتك السابقة",
+        profile: "الملف الشخصي" // ✅ إضافة لربطها بالقائمة المنسدلة
+      },
+      en: {
+        history: "History",
+        community: "Community",
+        about: "About",
+        logout: "Logout",
+        diagnosis: "Start Diagnosis",
+        uplaod: "Uplaod Photo",
+        viewhistory: "Or View Your History",
+        profile: "Profile" // ✅ إضافة لربطها بالقائمة المنسدلة
+      }
+    };
+
+    function switchLang(lang) {
+      document.documentElement.lang = lang;
+      document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+
+      document.querySelectorAll("[data-key]").forEach(el => {
+        const icon = el.querySelector('i'); // استخراج أيقونة محتملة
+        const text = translations[lang][el.dataset.key];
+        
+        if (text) {
+             // If there's an icon, keep it and prepend the text
+            if (icon) {
+                el.innerHTML = '';
+                el.appendChild(icon);
+                el.appendChild(document.createTextNode(' ' + text));
+            } else {
+                 el.textContent = text;
+            }
+        }
+      });
+
+      // save the chosen lang in localStorage
+      localStorage.setItem("lang", lang);
+    }
+
+    const savedLang = localStorage.getItem("lang") || "en";
+    switchLang(savedLang);
+
+    // ✅ التعديل 4: إضافة منطق القائمة المنسدلة للملف الشخصي
+    document.addEventListener('DOMContentLoaded', () => {
+        const profileToggle = document.getElementById('profile-toggle');
+        
+        if (profileToggle) {
+            profileToggle.addEventListener('click', function (event) { 
+                // منع التنقل إذا تم النقر على أيقونة القائمة الرئيسية
+                if (event.target.tagName !== 'A' || event.target.id === 'profileDropdownToggle') {
+                    event.preventDefault(); 
+                }
+                this.classList.toggle('active'); 
+            });
+
+            // إغلاق القائمة عند النقر خارجها
+            document.addEventListener('click', (event) => {
+                if (!profileToggle.contains(event.target)) {
+                    profileToggle.classList.remove('active');
+                }
+            });
+        }
+    });
+
+function logout() {
+    // 💡 الخطوة 1: مسح جميع بيانات تسجيل الدخول من التخزين المحلي
+    localStorage.removeItem('token'); // إزالة رمز JWT
+    localStorage.removeItem('loggedIn'); // إزالة حالة تسجيل الدخول
+    
+    // يمكن ترك الإشعار أو حذفه حسب الرغبة
+    const lang = localStorage.getItem('lang') || 'en';
+    alert(lang === 'ar' ? 'تم تسجيل الخروج بنجاح.' : 'Logged out successfully.');
+    
+    // 💡 الخطوة 2: التوجيه إلى مسار Flask لمسح الجلسة على الخادم
+    window.location.href = "{{ url_for('logout') }}";
+}
+
+  </script>
+</body>
+
+</html>
