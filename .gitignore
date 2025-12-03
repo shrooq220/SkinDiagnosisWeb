@@ -6,4 +6,5 @@ flask_env/
 
 # Project Specific Files
 uploads/
-models/
+models/*.pth
+models/*.pt
