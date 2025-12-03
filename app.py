@@ -20,7 +20,7 @@ from base import Base
 from werkzeug.datastructures import FileStorage
 from io import BytesIO 
 import datetime
-
+import httpx
 
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -114,11 +114,31 @@ MODEL_DIR  = os.path.join(BASE_DIR, "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "best_model_final.pth")
 UPLOAD_DIR = UPLOAD_FOLDER
 
+
+MODEL_URL = "https://drive.google.com/uc?export=download&id=1IJxCUVa10m2YzFycLwP2ES5lLswNcRcg"
+
+def ensure_model_downloaded():
+    """Download model file from Google Drive if it does not exist."""
+    os.makedirs(MODEL_DIR, exist_ok=True)
+
+    if os.path.exists(MODEL_PATH):
+        return  # already downloaded
+
+    print("Downloading model file from Google Drive...")
+    with httpx.stream("GET", MODEL_URL, timeout=None) as r:
+        r.raise_for_status()
+        with open(MODEL_PATH, "wb") as f:
+            for chunk in r.iter_bytes():
+                if chunk:
+                    f.write(chunk)
+    print("Model download completed.")
 # Global confidence threshold
 CONFIDENCE_THRESHOLD = 40.0 # Minimum confidence percentage required for diagnosis
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 IS_MODEL_LOADED = False
+
+ensure_model_downloaded()
 
 if os.path.exists(MODEL_PATH):
     try:
