@@ -79,8 +79,7 @@ TRANSLATIONS_DATA = {
 # ==================================
 # PostgreSQL Database Configuration
 # ==================================
-DATABASE_URL = 'postgresql://neondb_owner:npg_pg2dkfGzj0Ch@ep-aged-grass-ag79m5xf-pooler.c-2.eu-central-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
-
+DATABASE_URL = os.getenv("DATABASE_URL")
 
 # ==================================
 # Application and Blueprint Setup
@@ -91,7 +90,6 @@ app.secret_key = '1hdfkhrtfd@#d356hsy'
 
 
 CORS(app)
-app.config['UPLOAD_FOLDER'] = 'uploads' 
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True) 
 app.register_blueprint(auth_blueprint, url_prefix='/auth')
@@ -114,7 +112,7 @@ from torchvision.models import convnext_base
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR  = os.path.join(BASE_DIR, "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "best_model_final.pth")
-UPLOAD_DIR = os.path.join(BASE_DIR, app.config['UPLOAD_FOLDER'])
+UPLOAD_DIR = UPLOAD_FOLDER
 
 # Global confidence threshold
 CONFIDENCE_THRESHOLD = 40.0 # Minimum confidence percentage required for diagnosis
