@@ -113,7 +113,7 @@ BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR  = os.path.join(BASE_DIR, "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "best_model_final.pth")
 UPLOAD_DIR = UPLOAD_FOLDER
-
+IS_MODEL_LOADED = False
 
 MODEL_URL = "https://huggingface.co/shrooq220/dermalens/resolve/main/best_convnextv2_model.pth"
 
@@ -121,40 +121,68 @@ def ensure_model_downloaded():
     """Download model file from HuggingFace if it does not exist."""
     os.makedirs(MODEL_DIR, exist_ok=True)
 
+def download_from_huggingface():
+    """Download the model from HuggingFace once on Render."""
+    os.makedirs(MODEL_DIR, exist_ok=True)
     if os.path.exists(MODEL_PATH):
-        print("Model already exists.")
         return
 
-    print("Downloading model file from HuggingFace...")
-
+    print("Downloading model from HuggingFace...")
     try:
-        with httpx.stream("GET", MODEL_URL, follow_redirects=True, timeout=200.0) as r:
+        with httpx.stream("GET", MODEL_URL, follow_redirects=True, timeout=120.0) as r:
             if r.status_code != 200:
-                print(f"Download failed with status: {r.status_code}")
-                return
-            
+                raise Exception(f"Failed to download model: {r.status_code}")
+
             with open(MODEL_PATH, "wb") as f:
                 for chunk in r.iter_bytes():
                     if chunk:
                         f.write(chunk)
 
-        print("Model download completed successfully.")
-
+        print("Download completed.")
     except Exception as e:
-        print(f"Model download error: {e}")
+        print(f"Model download failed: {e}")
 
-      
-    else:
-      print(f"Warning: Model file not found at: {MODEL_PATH}. Prediction functionality will be disabled.")
+download_from_huggingface()
 
-# Fallback function if model fails to load
-if not IS_MODEL_LOADED:
-    # Full class names used for prediction
-    class_names = ["Acne and Rosacea Photos", "Eczema Photos", "Lupus and other Connective Tissue diseases", "Melanoma Skin Cancer Nevi and Moles", "Tinea Ringworm Candidiasis and other Fungal Infections"]
+# Load model
+try:
+    ck = torch.load(MODEL_PATH, map_location="cpu")
+    num_classes = ck["num_classes"]
+    class_names = ck["class_names"]
+    img_size    = ck["img_size"]
+    mean, std   = ck["mean"], ck["std"]
+
+    model = convnext_base(weights=None)
+    model.classifier[2] = nn.Linear(model.classifier[2].in_features, num_classes)
+    model.load_state_dict(ck["model_state_dict"], strict=False)
+    model.eval()
+
+    base_tf = transforms.Compose([
+        transforms.Resize((img_size, img_size)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean, std),
+    ])
+
+    @torch.no_grad()
     def predict_tta_pil(pil_img):
-        # Returns a random result with low confidence to simulate failure
-        return class_names[0], 0.10 # Acne, 10% (0.10)
+        x = base_tf(pil_img.convert("RGB"))
+        logits = model(x.unsqueeze(0))
+        probs = torch.softmax(logits, 1)[0]
 
+        conf, idx = float(probs.max().item()), int(probs.argmax().item())
+        return class_names[idx], conf
+
+    IS_MODEL_LOADED = True
+
+except Exception as e:
+    print("Model loading failed:", e)
+    class_names = ["Acne", "Eczema", "Lupus", "Melanoma", "Ringworm"]
+
+    def predict_tta_pil(pil_img):
+        return "Acne", 0.10
+
+
+    
 def slugify_class(name: str) -> str:
     """Converts a full class name to a URL-friendly slug."""
     mapping = {
