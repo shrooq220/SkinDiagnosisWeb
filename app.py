@@ -1,30 +1,31 @@
+import os
+import uuid
+import datetime
+
 import psycopg2
-import psycopg2.extras 
+import psycopg2.extras
+
 from flask import (
-    Flask, jsonify, request, render_template, 
+    Flask, jsonify, request, render_template,
     send_from_directory, url_for, redirect, session, g
 )
 from flask_cors import CORS
-import os
-# Assumed project files and modules
-from auth import auth_blueprint
-from auth import auth_middleware
-from database import get_db, engine 
 from werkzeug.utils import secure_filename
-import jwt 
-import uuid 
-from models.diagnosis_record import DiagnosisRecord
-from models.user import User 
-from models.post import Post 
-from base import Base
 from werkzeug.datastructures import FileStorage
-from io import BytesIO 
-import datetime
+
+import jwt
 import httpx
 
+# SQLAlchemy & models
+from database import get_db, engine
+from base import Base
+from models.diagnosis_record import DiagnosisRecord
+from models.user import User
+from models.post import Post
 
-BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-UPLOAD_FOLDER = os.path.join(BASE_DIR, 'uploads')
+# Auth blueprint & middleware
+from auth import auth_blueprint
+from auth import auth_middleware
 
 # ==================================
 # Translation Data Configuration
@@ -36,7 +37,7 @@ TRANSLATIONS_DATA = {
         "about": "عنا",
         "create": "إنشاء منشور جديد",
         "back": "<i class='fas fa-arrow-left'></i> العودة للمجتمع",
-        "tag": "التصنيف <span class='req'>*</span>", 
+        "tag": "التصنيف <span class='req'>*</span>",
         "none": "لا شيء",
         "melanoma": "ميلانوما",
         "lupus": "ذئبة",
@@ -58,7 +59,7 @@ TRANSLATIONS_DATA = {
         "about": "About",
         "create": "Create a New Post",
         "back": "<i class='fas fa-arrow-left'></i> Back to Community",
-        "tag": "Tag <span class='req'>*</span>", 
+        "tag": "Tag <span class='req'>*</span>",
         "none": "None",
         "melanoma": "Melanoma",
         "lupus": "Lupus",
@@ -82,75 +83,73 @@ TRANSLATIONS_DATA = {
 DATABASE_URL = os.getenv("DATABASE_URL")
 
 # ==================================
-# Application and Blueprint Setup
+# Paths & Uploads
 # ==================================
-app = Flask(__name__, static_url_path='/static', static_folder='static', template_folder='templates') 
-app.secret_key = '1hdfkhrtfd@#d356hsy'
-app.config['UPLOAD_FOLDER'] = 'uploads'
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 
+# ==================================
+# Flask App Setup
+# ==================================
+app = Flask(__name__, static_url_path='/static', static_folder='static', template_folder='templates')
+app.secret_key = '1hdfkhrtfd@#d356hsy'
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 CORS(app)
 
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True) 
+# Register Auth Blueprint
 app.register_blueprint(auth_blueprint, url_prefix='/auth')
 
+# Global confidence threshold (percentage)
+CONFIDENCE_THRESHOLD = 40.0
 
 # ==================================
-# 💡 وضع كود إنشاء المجلد وتهيئة Flask هنا
+# AI Model Initialization (HuggingFace)
 # ==================================
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-# ======================
-# AI Model Initialization
-# ======================
-from PIL import Image
 import torch
 import torch.nn as nn
 from torchvision import transforms
 from torchvision.models import convnext_base
+from PIL import Image
 
-BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
-MODEL_DIR  = os.path.join(BASE_DIR, "models")
+MODEL_DIR = os.path.join(BASE_DIR, "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "best_model_final.pth")
-UPLOAD_DIR = UPLOAD_FOLDER
-IS_MODEL_LOADED = False
 
-MODEL_URL = "https://huggingface.co/shrooq220/dermalens/resolve/main/best_convnextv2_model.pth"
+# رابط الموديل على HuggingFace
+HF_URL = "https://huggingface.co/shrooq220/dermalens/resolve/main/best_convnextv2_model.pth"
 
-def ensure_model_downloaded():
-    """Download model file from HuggingFace if it does not exist."""
-    os.makedirs(MODEL_DIR, exist_ok=True)
+os.makedirs(MODEL_DIR, exist_ok=True)
+
+IS_MODEL_LOADED = False  # فلاغ
 
 def download_from_huggingface():
     """Download the model from HuggingFace once on Render."""
-    os.makedirs(MODEL_DIR, exist_ok=True)
     if os.path.exists(MODEL_PATH):
         return
 
     print("Downloading model from HuggingFace...")
-    try:
-        with httpx.stream("GET", MODEL_URL, follow_redirects=True, timeout=120.0) as r:
-            if r.status_code != 200:
-                raise Exception(f"Failed to download model: {r.status_code}")
+    with httpx.stream("GET", HF_URL, follow_redirects=True, timeout=120.0) as r:
+        if r.status_code != 200:
+            raise Exception(f"Failed to download model: {r.status_code}")
 
-            with open(MODEL_PATH, "wb") as f:
-                for chunk in r.iter_bytes():
-                    if chunk:
-                        f.write(chunk)
+        with open(MODEL_PATH, "wb") as f:
+            for chunk in r.iter_bytes():
+                if chunk:
+                    f.write(chunk)
 
-        print("Download completed.")
-    except Exception as e:
-        print(f"Model download failed: {e}")
+    print("Model download completed.")
 
 download_from_huggingface()
 
-# Load model
+# تحميل الموديل
 try:
-    ck = torch.load(MODEL_PATH, map_location="cpu")
+    ck = torch.load(MODEL_PATH, map_location=torch.device("cpu"))
     num_classes = ck["num_classes"]
     class_names = ck["class_names"]
-    img_size    = ck["img_size"]
-    mean, std   = ck["mean"], ck["std"]
+    img_size = ck["img_size"]
+    mean, std = ck["mean"], ck["std"]
 
     model = convnext_base(weights=None)
     model.classifier[2] = nn.Linear(model.classifier[2].in_features, num_classes)
@@ -165,62 +164,68 @@ try:
 
     @torch.no_grad()
     def predict_tta_pil(pil_img):
+        # نسخة بسيطة بدون TTA (عادي يكفي الآن)
         x = base_tf(pil_img.convert("RGB"))
         logits = model(x.unsqueeze(0))
         probs = torch.softmax(logits, 1)[0]
-
         conf, idx = float(probs.max().item()), int(probs.argmax().item())
         return class_names[idx], conf
 
     IS_MODEL_LOADED = True
+    print("Model loaded successfully from HuggingFace.")
 
 except Exception as e:
     print("Model loading failed:", e)
-    class_names = ["Acne", "Eczema", "Lupus", "Melanoma", "Ringworm"]
+    # Fallback بسيط في حالة فشل التحميل
+    class_names = [
+        "Acne and Rosacea Photos",
+        "Eczema Photos",
+        "Lupus and other Connective Tissue diseases",
+        "Melanoma Skin Cancer Nevi and Moles",
+        "Tinea Ringworm Candidiasis and other Fungal Infections"
+    ]
 
     def predict_tta_pil(pil_img):
-        return "Acne", 0.10
+        return class_names[0], 0.10  # عشان ما يكسر الموقع لو في مشكلة
 
-
-    
+# ==================================
+# Helper: Slugify class name
+# ==================================
 def slugify_class(name: str) -> str:
     """Converts a full class name to a URL-friendly slug."""
     mapping = {
-        # Maps full diagnosis names to shorter, URL-friendly slugs
         "Acne and Rosacea Photos": "Acne",
         "Eczema Photos": "Eczema",
         "Lupus and other Connective Tissue diseases": "Lupus",
         "Melanoma Skin Cancer Nevi and Moles": "Melanoma",
-        "Tinea Ringworm Candidiasis and other Fungal Infections": "Ringworm", 
-        "Tinea/Ringworm ": "Ringworm", 
+        "Tinea Ringworm Candidiasis and other Fungal Infections": "Ringworm",
+        "Tinea/Ringworm ": "Ringworm",
     }
-    return mapping.get(name, "Acne") 
+    return mapping.get(name, "Acne")
 
 # ==================================
-# PostgreSQL Connection Management Utilities
+# PostgreSQL Connection Management Utilities (psycopg2)
 # ==================================
-
 def get_db_connection():
-    """Establishes a database connection and stores it in Flask's g object."""
+    """Establishes a raw psycopg2 database connection and stores it in Flask's g object."""
     if 'db_conn' not in g:
         g.db_conn = psycopg2.connect(DATABASE_URL)
     return g.db_conn
 
 @app.teardown_appcontext
 def close_db_connection(exception):
-    """Automatically closes the database connection after each request."""
+    """Automatically closes the psycopg2 database connection after each request."""
     db = g.pop('db_conn', None)
     if db is not None:
         db.close()
 
 # -------------------------------------------------------------
-# Database Table Creation Function
+# Database Table Creation Function (SQLAlchemy)
 # -------------------------------------------------------------
 def create_db_tables():
     """Creates/updates database tables based on SQLAlchemy models."""
     print("Attempting to create/update database tables...")
     try:
-        # Base and engine are assumed to be correctly defined in database.py
         Base.metadata.create_all(bind=engine)
         print("Database tables created/updated successfully.")
     except Exception as e:
@@ -229,7 +234,6 @@ def create_db_tables():
 # ==================================
 # Main Page Routes
 # ==================================
-
 @app.route('/')
 def index():
     """Handles the root URL, redirects logged-in users to diagnosis page."""
@@ -244,7 +248,6 @@ def login():
         return redirect(url_for('diagnosis'))
     return render_template('login.html')
 
-
 @app.route('/register')
 def register():
     return render_template('register.html')
@@ -257,19 +260,18 @@ def analysis():
 def forgot_password():
     return render_template('forgot-password.html')
 
-
 @app.route('/diagnosis')
 def diagnosis():
     return render_template('Diagnosis.html')
 
 @app.route('/community')
 def community():
-    lang_from_request = 'en'  
+    lang_from_request = 'en'
     translations_data = TRANSLATIONS_DATA
 
     return render_template(
         'community.html',
-        translations=translations_data, 
+        translations=translations_data,
         lang=lang_from_request
     )
 
@@ -277,31 +279,29 @@ def community():
 @auth_middleware
 def profile(user_id_from_token=None):
     user_id = session.get('user_id') or user_id_from_token
-    
+
     if not user_id:
         return redirect(url_for('login'))
-    
+
     db = next(get_db())
-    user_db = db.query(User).filter(User.user_id == user_id).first() 
-    db.close() 
+    user_db = db.query(User).filter(User.user_id == user_id).first()
+    db.close()
     if not user_db:
-        session.pop('user_id', None) 
+        session.pop('user_id', None)
         return redirect(url_for('login'))
-    
-    # Prepare user data for the template
+
     full_name = f"{user_db.first_name or ''} {user_db.last_name or ''}".strip()
 
     return render_template('profile.html', user={
-        'first_name': user_db.first_name, 
+        'first_name': user_db.first_name,
         'last_name': user_db.last_name,
         'email': user_db.email,
         'age': user_db.age,
         'phone_number': user_db.phone_number,
         'gender': user_db.gender,
-        'avatar_url': url_for('uploaded_file', filename=user_db.profile_picture_url) if user_db.profile_picture_url 
+        'avatar_url': url_for('uploaded_file', filename=user_db.profile_picture_url) if user_db.profile_picture_url
         else url_for('static', filename='default_avatar.png')
     })
-
 
 @app.route('/history')
 def history():
@@ -318,16 +318,14 @@ def unknown_result_page():
     """Renders the result page for unconfirmed diagnosis (low confidence)."""
     return render_template('UnknownResult.html')
 
-
 @app.route('/logout')
 def logout():
-   session.clear()
-   return redirect(url_for('login'))
+    session.clear()
+    return redirect(url_for('login'))
 
 # ==================================
 # API ROUTES
 # ==================================
-
 @app.route('/api/history', methods=['GET'])
 @auth_middleware
 def api_history(user_id_from_token):
@@ -337,32 +335,31 @@ def api_history(user_id_from_token):
     """
     db = next(get_db())
     try:
-        # Retrieve all diagnosis records for the user, ordered by creation time
-        records = db.query(DiagnosisRecord).filter(DiagnosisRecord.user_id == user_id_from_token).order_by(DiagnosisRecord.created_at.desc()).all()
+        records = (
+            db.query(DiagnosisRecord)
+            .filter(DiagnosisRecord.user_id == user_id_from_token)
+            .order_by(DiagnosisRecord.created_at.desc())
+            .all()
+        )
 
         results = []
         for record in records:
-            # 1. Extract the filename from the full path
             image_filename = record.image_path.split('/')[-1]
-            
-            # Use the uploaded_file route to serve the image
             image_url = url_for('uploaded_file', filename=image_filename)
-            
-            # Convert confidence float (0.0-1.0) to a percentage string
+
             confidence_percentage = f"{record.confidence * 100:.2f}"
-            
-            # 2. Build the detailed URL with image and confidence parameters
+
             details_url = url_for(
-                'disease_page', 
+                'disease_page',
                 disease=slugify_class(record.diagnosis_name),
-                img=image_filename,  # Add image filename
-                conf=confidence_percentage # Add confidence percentage
+                img=image_filename,
+                conf=confidence_percentage
             )
-            
+
             results.append({
                 'id': record.id,
                 'diagnosis_name': record.diagnosis_name,
-                'confidence': f"{int(record.confidence * 100)}%",  # Display confidence as an integer percentage
+                'confidence': f"{int(record.confidence * 100)}%",
                 'image_url': image_url,
                 'date': record.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                 'details_url': details_url
@@ -376,21 +373,19 @@ def api_history(user_id_from_token):
     finally:
         db.close()
 
-
-
 @app.route('/create-post', methods=['GET', 'POST'])
 def create_post():
     """Renders the page for creating a new community post."""
-    current_lang = 'ar' 
-    
+    current_lang = 'ar'
+
     return render_template(
-        'create-post.html', 
-        translations=TRANSLATIONS_DATA,  
-        lang=current_lang               
+        'create-post.html',
+        translations=TRANSLATIONS_DATA,
+        lang=current_lang
     )
 
 @app.route('/api/posts', methods=['POST'])
-@auth_middleware 
+@auth_middleware
 def create_new_post(user_id_from_token):
     """
     API endpoint for creating a new post.
@@ -399,11 +394,11 @@ def create_new_post(user_id_from_token):
     db = next(get_db())
     try:
         data = request.get_json()
-        
+
         title = data.get('title')
         body = data.get('body')
         tag = data.get('tag')
-        
+
         if not title or not body or not tag or tag.lower() == 'none':
             return jsonify({'success': False, 'error': 'Title, body, and tag are required.'}), 400
 
@@ -434,21 +429,25 @@ def get_all_posts():
     """
     db = next(get_db())
     try:
-        # Join Posts with Users to get creator information
-        posts_with_users = db.query(Post).join(User, Post.user_id == User.user_id).order_by(Post.postDate.desc()).all()
-        
+        posts_with_users = (
+            db.query(Post)
+            .join(User, Post.user_id == User.user_id)
+            .order_by(Post.postDate.desc())
+            .all()
+        )
+
         results = []
         for post in posts_with_users:
-            user = post.creator 
-            
+            user = post.creator
+
             creator_name = 'Deleted User'
             profile_pic_url = None
-            
+
             if user:
                 creator_name = f"{user.first_name or ''} {user.last_name or ''}".strip()
-                if not creator_name: 
+                if not creator_name:
                     creator_name = 'Anonymous'
-                    
+
                 if user.profile_picture_url:
                     profile_pic_url = url_for('uploaded_file', filename=user.profile_picture_url, _external=False)
 
@@ -458,13 +457,12 @@ def get_all_posts():
                 'body': post.body,
                 'tag': post.tag,
                 'likes_count': post.likes_count,
-                'created_at': post.postDate.isoformat(), 
-                
-                'user_id': post.user_id, 
+                'created_at': post.postDate.isoformat(),
+                'user_id': post.user_id,
                 'creator_name': creator_name,
                 'profile_pic_url': profile_pic_url,
             })
-        
+
         return jsonify({'success': True, 'posts': results}), 200
 
     except Exception as e:
@@ -477,9 +475,8 @@ def get_all_posts():
 # Analysis and Redirection Logic
 # -------------------------------------------------------------
 @app.route('/api/analysis', methods=['POST'])
-@auth_middleware 
+@auth_middleware
 def api_analysis(user_id_from_token):
-   
     if 'image' not in request.files:
         return jsonify({'success': False, 'error': 'No image file provided.'}), 400
 
@@ -487,64 +484,55 @@ def api_analysis(user_id_from_token):
 
     if image_file.filename == '':
         return jsonify({'success': False, 'error': 'No selected file.'}), 400
-    
+
     db = next(get_db())
     try:
         # 1. Prediction using the AI model
         pil_img = Image.open(image_file).convert("RGB")
-        # confidence_float is between 0.0 and 1.0
-        diagnosis_name, confidence_float = predict_tta_pil(pil_img) 
-        
-        confidence_percent = confidence_float * 100 # Convert to percentage (0.0 - 100.0)
+        diagnosis_name, confidence_float = predict_tta_pil(pil_img)
 
-        # Confidence Threshold Check (40%)
+        confidence_percent = confidence_float * 100.0
+
+        # لو الثقة أقل من العتبة نودّي المستخدم لصفحة UnknownResult
         if confidence_percent < CONFIDENCE_THRESHOLD:
-            # Redirect to the "UnknownResult" page
             details_url = url_for("unknown_result_page")
-            
-            # Return success=True with the redirect URL for client-side handling
             return jsonify({
-                'success': True, 
-                'diagnosis_name': "Unknown", 
-                'confidence': round(confidence_percent, 2), 
+                'success': True,
+                'diagnosis_name': "Unknown",
+                'confidence': round(confidence_percent, 2),
                 'details_url': details_url
             }), 200
-            
+
         # 2. Save the file (only if confidence is sufficient)
         image_file.seek(0)
-        filename = f"{uuid.uuid4()}.{secure_filename(image_file.filename).split('.')[-1]}"
-        save_path = os.path.join(UPLOAD_DIR, filename)
+        ext = secure_filename(image_file.filename).split('.')[-1]
+        filename = f"{uuid.uuid4()}.{ext}"
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
         image_file.save(save_path)
 
-
         # 3. Save the record in the database
-        # Shorten diagnosis name for the VARCHAR(50) column
         db_diagnosis_name = diagnosis_name
         if diagnosis_name == "Tinea Ringworm Candidiasis and other Fungal Infections":
-            # Use the shorter value for DB
-            db_diagnosis_name = "Tinea/Ringworm " 
+            db_diagnosis_name = "Tinea/Ringworm "
 
-        # Determine the URL slug based on the diagnosis name
-        slug = slugify_class(db_diagnosis_name) 
-        
+        slug = slugify_class(db_diagnosis_name)
+
         new_record = DiagnosisRecord(
             id=str(uuid.uuid4()),
             user_id=user_id_from_token,
-            diagnosis_name=db_diagnosis_name, # Use the safe DB name
-            confidence=confidence_float, # Save the float value in the DB
+            diagnosis_name=db_diagnosis_name,
+            confidence=confidence_float,
             image_path=filename,
             created_at=datetime.datetime.now()
         )
-        
+
         db.add(new_record)
         db.commit()
 
-        # 4. Return the result to the client
-        # Use the slug (e.g., Ringworm) for the result page URL
         return jsonify({
             'success': True,
-            'diagnosis': diagnosis_name, # Return full name in API response
-            'confidence': round(confidence_percent, 2), 
+            'diagnosis': diagnosis_name,
+            'confidence': round(confidence_percent, 2),
             'details_url': url_for('disease_page', disease=slug, img=filename, conf=round(confidence_percent, 2))
         }), 200
 
@@ -555,7 +543,6 @@ def api_analysis(user_id_from_token):
     finally:
         db.close()
 
-
 # -------------------------------------------------------------
 # Dynamic Route for Disease Result Pages
 # -------------------------------------------------------------
@@ -565,24 +552,22 @@ def disease_page(disease):
     Dynamic route to render the specific disease result page.
     Renders the appropriate HTML template based on the 'disease' slug.
     """
-    # Map slugs to template filenames
     templates_map = {
-        "Acne":     "Acne.html",
-        "Eczema":   "Eczema.html",
-        "Lupus":    "Lupus.html",
+        "Acne": "Acne.html",
+        "Eczema": "Eczema.html",
+        "Lupus": "Lupus.html",
         "Melanoma": "Melanoma.html",
-        "Ringworm": "Ringworm.html", 
+        "Ringworm": "Ringworm.html",
     }
-    tpl = templates_map.get(disease, f"{disease}.html") 
+    tpl = templates_map.get(disease, f"{disease}.html")
 
     conf = request.args.get("conf", type=float, default=None)
-    img  = request.args.get("img", type=str, default=None)
+    img = request.args.get("img", type=str, default=None)
 
     image_url = None
     if img:
         image_url = url_for("uploaded_file", filename=img)
 
-    # Prepare a user-friendly name for the template
     pretty_name = {
         "Acne": "Acne ",
         "Eczema": "Eczema ",
@@ -590,14 +575,13 @@ def disease_page(disease):
         "Melanoma": "Melanoma Skin Cancer ",
         "Ringworm": "Tinea Ringworm ",
     }.get(disease, disease)
-    
-    return render_template(tpl,
-                           pred_name=pretty_name,
-                           confidence=conf,
-                           image_url=image_url)
 
-
-
+    return render_template(
+        tpl,
+        pred_name=pretty_name,
+        confidence=conf,
+        image_url=image_url
+    )
 
 # -------------------------------------------------------------
 # Route for Serving Uploaded Files
