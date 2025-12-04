@@ -115,82 +115,37 @@ MODEL_PATH = os.path.join(MODEL_DIR, "best_model_final.pth")
 UPLOAD_DIR = UPLOAD_FOLDER
 
 
-MODEL_URL = "https://drive.google.com/uc?export=download&id=1IJxCUVa10m2YzFycLwP2ES5lLswNcRcg"
+MODEL_URL = "https://huggingface.co/shrooq220/dermalens/resolve/main/best_convnextv2_model.pth"
 
 def ensure_model_downloaded():
-    """Download model file from Google Drive if it does not exist."""
+    """Download model file from HuggingFace if it does not exist."""
     os.makedirs(MODEL_DIR, exist_ok=True)
 
     if os.path.exists(MODEL_PATH):
-        return  # already downloaded
+        print("Model already exists.")
+        return
 
-    print("Downloading model file from Google Drive...")
-    with httpx.stream("GET", MODEL_URL, timeout=120.0, follow_redirects=True) as r:
-        # إذا كانت عملية إعادة التوجيه غير ناجحة ووصل رمز حالة 4xx أو 5xx، يمكننا رفع الخطأ هنا
-        # لكن لتخطي الـ 303، نكتفي بالفحص قبل التنزيل
-        
-        # يمكنك فحص رمز الحالة للتأكد من أن الاستجابة النهائية ناجحة (200 OK)
-        if r.status_code != 200:
-             # إذا لم تنجح إعادة التوجيه، يمكنك إظهار الخطأ
-             # للحالات 4xx و 5xx، لكننا سنتجنب رفع الخطأ عند 303
-             if r.status_code >= 400:
-                 r.raise_for_status()
-        with open(MODEL_PATH, "wb") as f:
-            for chunk in r.iter_bytes():
-                if chunk:
-                    f.write(chunk)
-    print("Model download completed.")
-# Global confidence threshold
-CONFIDENCE_THRESHOLD = 40.0 # Minimum confidence percentage required for diagnosis
+    print("Downloading model file from HuggingFace...")
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-IS_MODEL_LOADED = False
-
-ensure_model_downloaded()
-
-if os.path.exists(MODEL_PATH):
     try:
-        ck = torch.load(MODEL_PATH, map_location=device)
-        num_classes = ck["num_classes"]
-        class_names = ck["class_names"]
-        img_size    = ck["img_size"]
-        mean, std   = ck["mean"], ck["std"]
+        with httpx.stream("GET", MODEL_URL, follow_redirects=True, timeout=200.0) as r:
+            if r.status_code != 200:
+                print(f"Download failed with status: {r.status_code}")
+                return
+            
+            with open(MODEL_PATH, "wb") as f:
+                for chunk in r.iter_bytes():
+                    if chunk:
+                        f.write(chunk)
 
-        model = convnext_base(weights=None)
-        model.classifier[2] = nn.Linear(model.classifier[2].in_features, num_classes)
-        model.load_state_dict(ck["model_state_dict"], strict=False)
-        model.to(device).eval()
-        
-        # Data augmentation transformations for TTA
-        base_tf = transforms.Compose([
-            transforms.Resize((img_size, img_size)),
-            transforms.ToTensor(),
-            transforms.Normalize(mean, std),
-        ])
-        hflip = transforms.RandomHorizontalFlip(p=1.0)
-        vflip = transforms.RandomVerticalFlip(p=1.0)
-        rot15 = transforms.RandomRotation(15)
+        print("Model download completed successfully.")
 
-        @torch.no_grad()
-        def predict_tta_pil(pil_img):
-            """
-            Performs TTA (5-views) prediction using Softmax mean. 
-            Returns the predicted class name and confidence (float from 0.0 to 1.0).
-            """
-            x = base_tf(pil_img.convert("RGB"))
-            views = [x, hflip(x.clone()), vflip(x.clone()), rot15(x.clone()), hflip(rot15(x.clone()))]
-            X = torch.stack(views, 0).to(device)
-            with torch.autocast(device_type='cuda', dtype=torch.float16, enabled=(device.type=='cuda')):
-                 logits = model(X)
-            probs = torch.softmax(logits, 1).mean(0)
-            conf, idx = float(probs.max().item()), int(probs.argmax().item())
-            return class_names[idx], conf 
-        
-        IS_MODEL_LOADED = True
     except Exception as e:
-        print(f"Model loading or setup failed: {e}")
-else:
-    print(f"Warning: Model file not found at: {MODEL_PATH}. Prediction functionality will be disabled.")
+        print(f"Model download error: {e}")
+
+      
+    else:
+      print(f"Warning: Model file not found at: {MODEL_PATH}. Prediction functionality will be disabled.")
 
 # Fallback function if model fails to load
 if not IS_MODEL_LOADED:
