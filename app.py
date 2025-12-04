@@ -86,7 +86,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 # ==================================
 app = Flask(__name__, static_url_path='/static', static_folder='static', template_folder='templates') 
 app.secret_key = '1hdfkhrtfd@#d356hsy'
-
+app.config['UPLOAD_FOLDER'] = 'uploads'
 
 
 CORS(app)
