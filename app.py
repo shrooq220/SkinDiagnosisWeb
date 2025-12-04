@@ -125,8 +125,16 @@ def ensure_model_downloaded():
         return  # already downloaded
 
     print("Downloading model file from Google Drive...")
-    with httpx.stream("GET", MODEL_URL, timeout=None) as r:
-        r.raise_for_status()
+    with httpx.stream("GET", MODEL_URL, timeout=120.0, follow_redirects=True) as r:
+        # إذا كانت عملية إعادة التوجيه غير ناجحة ووصل رمز حالة 4xx أو 5xx، يمكننا رفع الخطأ هنا
+        # لكن لتخطي الـ 303، نكتفي بالفحص قبل التنزيل
+        
+        # يمكنك فحص رمز الحالة للتأكد من أن الاستجابة النهائية ناجحة (200 OK)
+        if r.status_code != 200:
+             # إذا لم تنجح إعادة التوجيه، يمكنك إظهار الخطأ
+             # للحالات 4xx و 5xx، لكننا سنتجنب رفع الخطأ عند 303
+             if r.status_code >= 400:
+                 r.raise_for_status()
         with open(MODEL_PATH, "wb") as f:
             for chunk in r.iter_bytes():
                 if chunk:
